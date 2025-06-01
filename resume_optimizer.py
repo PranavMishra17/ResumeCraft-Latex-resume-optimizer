@@ -16,15 +16,16 @@ from langchain_core.messages import HumanMessage, SystemMessage
 
 class Config:
     """Configuration for Azure OpenAI"""
-    AZURE_DEPLOYMENT = "your-deployment-name"  # Replace with your deployment
-    AZURE_API_KEY = os.getenv("AZURE_API_KEY")
-    AZURE_API_VERSION = "2024-02-15-preview"
-    AZURE_ENDPOINT = "https://your-endpoint.openai.azure.com/"  # Replace with your endpoint
-    TEMPERATURE = 0.3
+    AZURE_DEPLOYMENT = "VARELab-GPT4o"  # Replace with your deployment
+    AZURE_API_KEY = os.getenv("AZURE_OPENAI_VARE_KEY")
+    AZURE_API_VERSION = "2024-08-01-preview"
+    AZURE_ENDPOINT =  os.getenv("AZURE_ENDPOINT")
+    TEMPERATURE = 0.25
 
 class ResumeOptimizer:
     def __init__(self):
         self.config = Config()
+        print("Initializing Azure OpenAI client...", f"\n AZURE_DEPLOYMENT = {self.config.AZURE_DEPLOYMENT}, \n AZURE_API_KEY = {self.config.AZURE_API_KEY} ")
         self.client = AzureChatOpenAI(
             azure_deployment=self.config.AZURE_DEPLOYMENT,
             api_key=self.config.AZURE_API_KEY,
@@ -401,3 +402,16 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+
+"""
+# With keywords file
+python resume_optimizer.py ai resume.tex keywords.txt
+
+# With job description (auto-extracts keywords)
+python resume_optimizer.py resume.tex job_description.txt --jd
+
+# Keep LaTeX files for inspection
+python resume_optimizer.py resume.tex keywords.txt --keep-tex
+
+"""

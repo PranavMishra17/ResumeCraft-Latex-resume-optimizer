@@ -1,0 +1,10 @@
+machine learning
+GPU
+Python
+C++
+data ingestion
+cloud infrastructure
+x86
+problem-solving
+FPGA
+CI/CD
