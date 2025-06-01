@@ -10,29 +10,50 @@ import sys
 import re
 import subprocess
 from pathlib import Path
-from datetime import datetime
+import shutil
 from langchain_openai import AzureChatOpenAI
-from langchain_core.messages import HumanMessage, SystemMessage
+from langchain_core.messages import SystemMessage, HumanMessage
+from datetime import datetime
 
 class Config:
     """Configuration for Azure OpenAI"""
-    AZURE_DEPLOYMENT = "VARELab-GPT4o"  # Replace with your deployment
-    AZURE_API_KEY = os.getenv("AZURE_OPENAI_VARE_KEY")
+    AZURE_DEPLOYMENT = "VARELab-GPT4o"
+    AZURE_API_KEY = ""
     AZURE_API_VERSION = "2024-08-01-preview"
-    AZURE_ENDPOINT =  os.getenv("AZURE_ENDPOINT")
+    AZURE_ENDPOINT = os.getenv("AZURE_ENDPOINT", "")  # Fallback URL
     TEMPERATURE = 0.25
 
 class ResumeOptimizer:
     def __init__(self):
         self.config = Config()
-        print("Initializing Azure OpenAI client...", f"\n AZURE_DEPLOYMENT = {self.config.AZURE_DEPLOYMENT}, \n AZURE_API_KEY = {self.config.AZURE_API_KEY} ")
-        self.client = AzureChatOpenAI(
-            azure_deployment=self.config.AZURE_DEPLOYMENT,
-            api_key=self.config.AZURE_API_KEY,
-            api_version=self.config.AZURE_API_VERSION,
-            azure_endpoint=self.config.AZURE_ENDPOINT,
-            temperature=self.config.TEMPERATURE
-        )
+        
+        # Debug configuration
+        print("Initializing Azure OpenAI client...")
+        print(f" AZURE_DEPLOYMENT = {self.config.AZURE_DEPLOYMENT}")
+        print(f" AZURE_ENDPOINT = {self.config.AZURE_ENDPOINT}")
+        print(f" AZURE_API_VERSION = {self.config.AZURE_API_VERSION}")
+        
+        # Validate configuration
+        if not self.config.AZURE_ENDPOINT:
+            print("Error: AZURE_ENDPOINT not set. Please set environment variable or update config.")
+            sys.exit(1)
+            
+        if not self.config.AZURE_API_KEY:
+            print("Error: AZURE_API_KEY not set.")
+            sys.exit(1)
+        
+        try:
+            self.client = AzureChatOpenAI(
+                azure_deployment=self.config.AZURE_DEPLOYMENT,
+                api_key=self.config.AZURE_API_KEY,
+                api_version=self.config.AZURE_API_VERSION,
+                azure_endpoint=self.config.AZURE_ENDPOINT,
+                temperature=self.config.TEMPERATURE
+            )
+            print("Azure OpenAI client initialized successfully!")
+        except Exception as e:
+            print(f"Error initializing Azure OpenAI client: {e}")
+            sys.exit(1)
 
     def read_file(self, filepath):
         """Read file content"""
@@ -44,7 +65,7 @@ class ResumeOptimizer:
             sys.exit(1)
 
     def parse_subfiles(self, latex_content, base_dir):
-        """Parse \subfile commands and read component files"""
+        """Parse \\subfile commands and read component files"""
         subfile_pattern = r'\\subfile\{([^}]+)\}'
         subfiles = re.findall(subfile_pattern, latex_content)
         
@@ -65,7 +86,7 @@ class ResumeOptimizer:
             if os.path.exists(full_path):
                 content = self.read_file(full_path)
                 subfile_contents[subfile_path] = content
-                # Replace \subfile command with actual content for LLM processing
+                # Replace \\subfile command with actual content for LLM processing
                 combined_content = combined_content.replace(
                     f'\\subfile{{{subfile_path}}}', 
                     content
@@ -138,6 +159,7 @@ class ResumeOptimizer:
         response = self.client.invoke(messages)
         company = response.content.strip().replace(' ', '').replace('-', '').replace('.', '')
         return company if company else "Company"
+    
     def extract_keywords_from_jd(self, job_description):
         """Extract relevant keywords from job description using LLM"""
         system_prompt = """Extract 10-15 most important technical keywords, skills, and technologies from this job description. 
@@ -159,6 +181,18 @@ class ResumeOptimizer:
         print(f"Extracted keywords: {keywords}")
         return keywords
 
+    def parse_keywords(self, keyword_content):
+        """Parse keywords from various formats (comma-separated or line-separated)"""
+        # Try comma-separated first
+        if ',' in keyword_content:
+            keywords = [kw.strip() for kw in keyword_content.split(',') if kw.strip()]
+        else:
+            # Split by lines and filter empty lines
+            keywords = [kw.strip() for kw in keyword_content.split('\n') if kw.strip()]
+        
+        # Join back as comma-separated for LLM
+        return ', '.join(keywords)
+
     def optimize_resume(self, latex_content, keywords_or_jd, is_jd=False, base_dir="."):
         """Optimize LaTeX resume with keywords"""
         
@@ -166,74 +200,191 @@ class ResumeOptimizer:
         if is_jd:
             keywords = self.extract_keywords_from_jd(keywords_or_jd)
         else:
-            keywords = keywords_or_jd
+            keywords = self.parse_keywords(keywords_or_jd)
+            print(f"Parsed keywords: {keywords}")
 
         # Parse subfiles if present
         combined_content, subfile_contents = self.parse_subfiles(latex_content, base_dir)
 
-        system_prompt = """You are a LaTeX resume optimization expert. Your task is to modify a LaTeX resume to naturally incorporate relevant keywords while maintaining:
+        messages = [
+            SystemMessage(content="""You are a LaTeX resume optimization expert. Your task is to modify a LaTeX resume to incorporate relevant keywords while STRICTLY maintaining or reducing length.
 
-1. EXACT LaTeX structure and formatting
-2. One-page length constraint
-3. Meaningful project descriptions
-4. Strategic keyword placement based on relevance:
-   - Game design keywords → game development projects
-   - ML/AI keywords → machine learning projects  
-   - Web dev keywords → web development projects
-   - General tech keywords → most relevant sections
+CRITICAL LENGTH CONSTRAINTS:
+- Each \\item bullet point must have EQUAL OR FEWER words than the original
+- Count words carefully - NEVER exceed original word count per item
+- Remove filler words like "various", "multiple", "different" to make room for keywords
+- Replace generic terms with specific keywords when possible
+- If you can't fit a keyword, DON'T force it - maintain readability
 
-RULES:
-- Preserve ALL LaTeX commands, packages, and formatting
-- Only modify content within sections, never structure
-- Replace existing content strategically, don't just append
-- Maintain natural language flow
-- Ensure technical accuracy
-- Keep bullet points concise
-- Prioritize high-impact keywords
+LATEX STRUCTURE RULES:
+- NEVER add, remove, or move \\item commands
+- NEVER modify \\begin{itemize}, \\end{itemize}, or any list environments
+- NEVER change document structure or formatting commands
+- ONLY modify the text content after \\item commands
+- Preserve ALL LaTeX commands exactly as they appear
 
-Return ONLY the modified LaTeX code, no explanations."""
+KEYWORD PLACEMENT:
+- Replace existing terms with relevant keywords
+- Focus on job-specific technical terms
+- Maintain grammatical correctness
+- Don't repeat keywords excessively
 
-        user_prompt = f"""Original LaTeX Resume:
+WORD COUNT ENFORCEMENT:
+- Original: "Developed web application using React" (5 words)
+- Good: "Developed Python application using ML" (5 words)
+- Bad: "Developed distributed Python application using machine learning" (8 words)
+
+Return ONLY the modified LaTeX code - no explanations, no markdown."""),
+            HumanMessage(content=f"""Original LaTeX Resume:
 {combined_content}
 
 Keywords to incorporate:
 {keywords}
 
-Optimize this resume by strategically incorporating these keywords into relevant sections while maintaining the exact LaTeX structure and one-page constraint."""
+STRICT REQUIREMENTS:
+1. Count words in each \\item and ensure the optimized version has EQUAL OR FEWER words
+2. NEVER add new \\item commands or modify list structure
+3. Replace generic words with keywords, don't add to existing content
+4. If LaTeX has "\\item Developed application using tools" - you can change to "\\item Developed Python application using multithreading" but NOT "\\item Developed distributed Python application using multithreading for data processing"
 
-        messages = [
-            SystemMessage(content=system_prompt),
-            HumanMessage(content=user_prompt)
+Return ONLY the complete LaTeX code.""")
         ]
         
         print("Optimizing resume...")
-        response = self.client.invoke(messages)
-        optimized_content = response.content.strip()
+        try:
+            response = self.client.invoke(messages)
+            optimized_content = response.content.strip()
+            
+            # Debug: Check if we got a response
+            if not optimized_content:
+                print("Warning: Empty response from LLM")
+                return latex_content, subfile_contents, latex_content
+            
+            print(f"LLM response length: {len(optimized_content)} characters")
+            
+            # Clean up any markdown artifacts
+            optimized_content = self.clean_latex_output(optimized_content)
+            
+            if not optimized_content:
+                print("Error: Cleaned content is empty!")
+                return latex_content, subfile_contents, latex_content
+            
+            # Validate the optimized content
+            if not self.validate_optimized_content(combined_content, optimized_content):
+                print("Warning: Validation failed! Using original content.")
+                return latex_content, subfile_contents, latex_content
+            
+            return optimized_content, subfile_contents, latex_content
+            
+        except Exception as e:
+            print(f"Error during optimization: {e}")
+            return latex_content, subfile_contents, latex_content
+    
+    def validate_optimized_content(self, original, optimized):
+        """Validate that optimized content maintains structure and word count"""
+        # Check for LaTeX structure integrity
+        original_items = len(re.findall(r'\\item', original))
+        optimized_items = len(re.findall(r'\\item', optimized))
         
-        return optimized_content, subfile_contents, latex_content
+        if original_items != optimized_items:
+            print(f"Warning: \\item count mismatch! Original: {original_items}, Optimized: {optimized_items}")
+            return False
+            
+        # Check for balanced braces
+        if original.count('{') != optimized.count('{') or original.count('}') != optimized.count('}'):
+            print("Warning: Brace mismatch detected!")
+            return False
+            
+        # Check for balanced environments
+        for env in ['itemize', 'enumerate', 'description']:
+            orig_begin = len(re.findall(rf'\\begin\{{{env}\}}', original))
+            orig_end = len(re.findall(rf'\\end\{{{env}\}}', original))
+            opt_begin = len(re.findall(rf'\\begin\{{{env}\}}', optimized))
+            opt_end = len(re.findall(rf'\\end\{{{env}\}}', optimized))
+            
+            if orig_begin != opt_begin or orig_end != opt_end:
+                print(f"Warning: {env} environment mismatch!")
+                return False
+                
+        return True
+
+    def clean_latex_output(self, content):
+        """Remove markdown artifacts and ensure LaTeX validity"""
+        if not content:
+            return content
+            
+        # Remove markdown code blocks
+        content = re.sub(r'```latex\s*', '', content)
+        content = re.sub(r'```\s*', '', content)
+        content = re.sub(r"'''latex\s*", '', content)
+        content = re.sub(r"'''\s*", '', content)
+        
+        # Remove any stray markdown
+        content = re.sub(r'^```.*$', '', content, flags=re.MULTILINE)
+        
+        # IMPORTANT: Return the cleaned content!
+        return content
+
+    def copy_all_assets(self, source_dir, output_dir):
+        """Copy all non-tex files maintaining folder structure"""
+        print("Copying assets...")
+        copied_count = 0
+        
+        for root, dirs, files in os.walk(source_dir):
+            for file in files:
+                if file.endswith('.tex'):
+                    continue
+                
+                source_file = os.path.join(root, file)
+                rel_path = os.path.relpath(root, source_dir)
+                
+                if rel_path == '.':
+                    dest_file = os.path.join(output_dir, file)
+                else:
+                    dest_dir = os.path.join(output_dir, rel_path)
+                    os.makedirs(dest_dir, exist_ok=True)
+                    dest_file = os.path.join(dest_dir, file)
+                
+                shutil.copy2(source_file, dest_file)
+                copied_count += 1
+                if file.endswith(('.png', '.jpg', '.jpeg', '.pdf', '.svg')):
+                    print(f"  - {file}")
+        
+        print(f"Copied {copied_count} asset files")
+        return copied_count > 0
 
     def save_optimized_resume(self, optimized_content, subfile_contents, original_latex, output_path, base_dir="."):
         """Save optimized LaTeX to file(s)"""
         try:
+            if not optimized_content:
+                print("Error: No optimized content to save!")
+                return
+                
             if subfile_contents:
                 # Handle modular resume - split content back into components
                 print("Saving modular resume...")
                 
-                # For modular resumes, we use a smarter approach:
-                # Extract sections from optimized content and map to subfiles
-                optimized_sections = self.extract_sections_from_optimized(optimized_content)
+                output_dir = os.path.dirname(output_path)
+                
+                # Copy ALL assets before optimization
+                print("Copying all assets from source directory...")
+                asset_success = self.copy_all_assets(base_dir, output_dir)
+                
+                if not asset_success:
+                    print("Warning: No assets found to copy")
+                
+                # For modular resumes, extract sections more carefully
+                optimized_sections = self.extract_sections_smartly(optimized_content, subfile_contents)
                 
                 # Save main file (keep original structure with \subfile commands)
                 with open(output_path, 'w', encoding='utf-8') as f:
                     f.write(original_latex)
                 
                 # Save optimized subfiles
-                output_dir = os.path.dirname(output_path)
                 subfiles_dir = os.path.join(output_dir, "subsections")
                 os.makedirs(subfiles_dir, exist_ok=True)
                 
                 for subfile_path, original_content in subfile_contents.items():
-                    # Map content based on filename
                     section_name = self.get_section_name_from_file(subfile_path)
                     optimized_section = optimized_sections.get(section_name, original_content)
                     
@@ -255,7 +406,44 @@ Optimize this resume by strategically incorporating these keywords into relevant
             
         except Exception as e:
             print(f"Error saving optimized resume: {e}")
+            import traceback
+            traceback.print_exc()
             sys.exit(1)
+    
+    def extract_sections_smartly(self, optimized_content, subfile_contents):
+        """Extract sections from optimized content without duplicating section headers"""
+        sections = {}
+        
+        # For each subfile, extract only the content (not section headers)
+        for subfile_path, original_content in subfile_contents.items():
+            section_name = self.get_section_name_from_file(subfile_path)
+            
+            # Try to find the section in optimized content
+            if section_name == 'education':
+                pattern = r'\\section\{education\}(.*?)(?=\\section|\Z)'
+            elif section_name == 'academic_experience':
+                pattern = r'\\section\{academic.*?experience\}(.*?)(?=\\section|\Z)'
+            elif section_name == 'experience' or section_name == 'work_ex':
+                pattern = r'\\section\{.*?(work|experience|professional).*?\}(.*?)(?=\\section|\Z)'
+            elif section_name == 'skills':
+                pattern = r'\\section\{.*?skill.*?\}(.*?)(?=\\section|\Z)'
+            elif section_name == 'awards':
+                pattern = r'\\section\{.*?award.*?\}(.*?)(?=\\section|\Z)'
+            else:
+                # Fallback to original content
+                sections[section_name] = original_content
+                continue
+            
+            match = re.search(pattern, optimized_content, re.DOTALL | re.IGNORECASE)
+            if match:
+                # Extract only the content part (group 1), not the section header
+                content_only = match.group(1).strip()
+                sections[section_name] = content_only
+            else:
+                # Fallback to original content
+                sections[section_name] = original_content
+        
+        return sections
     
     def extract_sections_from_optimized(self, optimized_content):
         """Extract sections from optimized content"""
@@ -297,29 +485,69 @@ Optimize this resume by strategically incorporating these keywords into relevant
             return filename
 
     def compile_pdf(self, latex_file):
-        """Compile LaTeX to PDF using pdflatex"""
+        """Compile LaTeX to PDF using pdflatex with better error handling"""
         try:
             print("Compiling PDF...")
-            result = subprocess.run(
-                ['pdflatex', '-interaction=nonstopmode', latex_file],
-                capture_output=True,
-                text=True,
-                cwd=os.path.dirname(latex_file) or '.'
-            )
+            # Change to the directory containing the tex file
+            work_dir = os.path.dirname(latex_file) or '.'
+            tex_filename = os.path.basename(latex_file)
             
-            if result.returncode == 0:
-                pdf_file = latex_file.replace('.tex', '.pdf')
+            # Run pdflatex twice to resolve references
+            for run in range(2):
+                print(f"  Running pdflatex (pass {run + 1}/2)...")
+                result = subprocess.run(
+                    ['pdflatex', '-interaction=nonstopmode', '-file-line-error', tex_filename],
+                    capture_output=True,
+                    text=True,
+                    cwd=work_dir
+                )
+                
+                if result.returncode != 0:
+                    print(f"\nPDF compilation failed on pass {run + 1}!")
+                    print("\n--- LaTeX Errors ---")
+                    
+                    # Parse error messages from stdout
+                    lines = result.stdout.split('\n')
+                    error_lines = []
+                    for i, line in enumerate(lines):
+                        if line.startswith('!') or 'Error:' in line or 'error' in line.lower():
+                            # Print error and context
+                            start = max(0, i - 2)
+                            end = min(len(lines), i + 3)
+                            error_lines.extend(lines[start:end])
+                    
+                    if error_lines:
+                        print('\n'.join(error_lines[:50]))  # Limit output
+                    else:
+                        # Fallback to showing stderr
+                        print(result.stderr[:1000])
+                    
+                    # Also check the log file
+                    log_file = os.path.join(work_dir, tex_filename.replace('.tex', '.log'))
+                    if os.path.exists(log_file):
+                        print(f"\nCheck {log_file} for detailed error information")
+                    
+                    return False
+            
+            pdf_file = latex_file.replace('.tex', '.pdf')
+            if os.path.exists(pdf_file):
                 print(f"PDF compiled successfully: {pdf_file}")
                 return True
             else:
-                print(f"PDF compilation failed:\n{result.stderr}")
+                print("PDF compilation completed but PDF file not found!")
                 return False
                 
         except FileNotFoundError:
-            print("pdflatex not found. Install LaTeX distribution (e.g., TeX Live, MiKTeX)")
+            print("Error: pdflatex not found!")
+            print("Please install a LaTeX distribution:")
+            print("  - Windows: MiKTeX (https://miktex.org/)")
+            print("  - Mac: MacTeX (https://www.tug.org/mactex/)")
+            print("  - Linux: TeX Live (sudo apt-get install texlive-full)")
             return False
         except Exception as e:
             print(f"Error compiling PDF: {e}")
+            import traceback
+            traceback.print_exc()
             return False
 
 def main():
@@ -351,7 +579,7 @@ def main():
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         output_dir = f"optimized_resume_{timestamp}"
         os.makedirs(output_dir, exist_ok=True)
-        output_path = os.path.join(output_dir, f"{base_name}_optimized.tex")
+        output_path = os.path.join(output_dir, f"{base_name}.tex")
 
     # Initialize optimizer
     optimizer = ResumeOptimizer()
@@ -392,7 +620,7 @@ def main():
                 pdf_path = output_path.replace('.tex', '.pdf')
                 # Remove .tex files but keep PDF
                 for file in os.listdir(os.path.dirname(output_path)):
-                    if file.endswith(('.tex', '.aux', '.log', '.out')):
+                    if file.endswith(('.aux', '.log', '.out')):
                         os.remove(os.path.join(os.path.dirname(output_path), file))
                 print(f"Final output: {pdf_path}")
             except Exception as e:
@@ -402,16 +630,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-
-"""
-# With keywords file
-python resume_optimizer.py ai resume.tex keywords.txt
-
-# With job description (auto-extracts keywords)
-python resume_optimizer.py resume.tex job_description.txt --jd
-
-# Keep LaTeX files for inspection
-python resume_optimizer.py resume.tex keywords.txt --keep-tex
-
-"""

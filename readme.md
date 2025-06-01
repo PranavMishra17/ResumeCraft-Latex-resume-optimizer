@@ -1,196 +1,326 @@
 # ResumeCraft 🎯
 
-*Intelligently optimize LaTeX resumes with AI-powered keyword integration*
+*AI-powered LaTeX resume optimization with intelligent keyword integration*
 
-## Description
+## Overview
 
-ResumeCraft automates LaTeX resume customization using Azure OpenAI to strategically incorporate job-relevant keywords while maintaining formatting and structure. 
+ResumeCraft leverages Azure OpenAI's GPT-4 to intelligently optimize LaTeX resumes for ATS systems while preserving document structure and semantic meaning. The tool performs contextual keyword placement, handles complex modular LaTeX structures, and maintains strict formatting constraints.
 
-> **For Recruiters:** Yes, this is technically "gaming the system" - but building an AI-powered LaTeX automation tool that preserves document structure, handles modular files, integrates with cloud APIs, and maintains semantic meaning probably tells you more about my engineering skills than any keyword-stuffed bullet point ever could. 😉
+> **For Recruiters:** Yes, this technically "games" ATS systems - but building an AI tool that parses LaTeX AST, maintains document invariants, handles distributed file structures, and performs semantic keyword mapping while preserving compilation targets probably demonstrates more engineering competence than any keyword ever could. 😉
 
-## Features
+## Technical Architecture
 
-- **Smart Keyword Integration**: Maps keywords to relevant resume sections (ML → ML projects, Web Dev → Web projects)
-- **Modular LaTeX Support**: Handles both single-file and `\subfile`-based resume structures
-- **Job Description Parsing**: Automatically extracts keywords from job descriptions using LLM
-- **Format Preservation**: Maintains exact LaTeX formatting, spacing, and one-page constraint
-- **PDF Generation**: Compiles optimized resumes directly to PDF
-- **Original File Safety**: Never modifies source files - creates timestamped output folders
+### Core Components
+- **LaTeX Parser**: Handles `\subfile{}` resolution and document tree construction
+- **LLM Integration**: Azure OpenAI GPT-4 for semantic understanding and rewriting
+- **Constraint Solver**: Maintains word count limits and structural integrity
+- **PDF Compiler**: Automated `pdflatex` invocation with error handling
+
+### Key Algorithms
+- **Keyword Extraction**: TF-IDF-like importance scoring from job descriptions
+- **Section Mapping**: Semantic similarity matching (ML keywords → ML sections)
+- **Word Count Preservation**: Per-bullet-point token counting and replacement
+- **Structure Validation**: AST comparison pre/post optimization
 
 ## Installation
 
-1. **Clone the repository**
+### 1. Clone Repository
 ```bash
 git clone https://github.com/yourusername/resumecraft.git
 cd resumecraft
 ```
 
-2. **Install dependencies**
+### 2. Python Dependencies
 ```bash
 pip install -r requirements.txt
 ```
 
-3. **Configure Azure OpenAI**
+Required packages:
+- `langchain-openai>=0.1.0`
+- `langchain-core>=0.2.0`
+- `azure-identity` (optional for managed identity)
+
+### 3. LaTeX Distribution (Required for PDF)
+
+**Windows - MiKTeX**
+- Download: https://miktex.org/download
+- Install with automatic package installation enabled
+- Verify: `pdflatex --version`
+
+**macOS - MacTeX**
+- Download: https://www.tug.org/mactex/
+- Full distribution (~4GB) or BasicTeX (~80MB)
+- Verify: `which pdflatex`
+
+**Linux - TeX Live**
 ```bash
-export AZURE_API_KEY="your-api-key"
+# Ubuntu/Debian
+sudo apt-get install texlive-full
+
+# Fedora
+sudo dnf install texlive-scheme-full
+
+# Arch
+sudo pacman -S texlive-core texlive-latexextra
 ```
 
-Update `AZURE_DEPLOYMENT` and `AZURE_ENDPOINT` in `resume_optimizer.py`.
+### 4. Azure OpenAI Configuration
+```bash
+# Environment variables
+export AZURE_API_KEY="your-api-key"
+export AZURE_ENDPOINT="https://your-resource.openai.azure.com/"
 
-4. **Install LaTeX** (for PDF compilation)
-- **Windows**: MiKTeX
-- **macOS**: MacTeX  
-- **Linux**: `sudo apt-get install texlive-full`
+# Or modify in resume_optimizer.py:
+AZURE_DEPLOYMENT = "your-deployment-name"
+AZURE_API_VERSION = "2024-08-01-preview"
+```
 
 ## Usage
 
-### Basic Usage
+### Basic Commands
 ```bash
-# With keywords file
+# Optimize with keyword list
 python resume_optimizer.py resume.tex keywords.txt
 
-# With job description (auto-extracts keywords)
+# Extract keywords from job description
 python resume_optimizer.py resume.tex job_description.txt --jd
 
-# Keep LaTeX files for inspection
-python resume_optimizer.py resume.tex keywords.txt --keep-tex
+# Custom output location
+python resume_optimizer.py resume.tex keywords.txt -o output/resume_v2.tex
+
+# Debug mode (keep all intermediate files)
+python resume_optimizer.py resume.tex keywords.txt --keep-tex --no-pdf
 ```
 
-### File Structure
+### Advanced Usage
+
+#### Modular Resume Support
 ```
-resumecraft/
-├── resume_optimizer.py      # Main script
-├── requirements.txt
-├── resume.tex              # Your original resume
-├── subsections/            # Subfile components (if modular)
+project/
+├── main_resume.tex         # Contains \subfile{} commands
+├── subsections/
 │   ├── education.tex
 │   ├── experience.tex
+│   ├── projects.tex
 │   └── skills.tex
-├── keywords.txt            # Keywords or job description
-└── optimized_resume_*/     # Generated output folders
-    └── resume_optimized.pdf
+└── job_description.txt
 ```
-
-### Input Files
-
-**keywords.txt** (comma-separated):
-```
-React, Node.js, Python, Machine Learning, TensorFlow, Docker, Kubernetes, AWS
-```
-
-**job_description.txt** (full job posting):
-```
-We're looking for a Full Stack Developer with experience in React, Node.js, 
-and cloud platforms like AWS. Knowledge of Docker and CI/CD pipelines preferred...
-```
-
-## Command Line Options
 
 ```bash
-python resume_optimizer.py [resume.tex] [input.txt] [options]
+# Automatically detects and processes subfiles
+python resume_optimizer.py main_resume.tex job_description.txt --jd
+```
 
-Options:
-  --jd              Input file contains job description (extract keywords)
-  -o, --output      Custom output path
-  --keep-tex        Keep intermediate LaTeX files
-  --no-pdf          Skip PDF compilation
+#### Batch Processing
+```bash
+# Process multiple job descriptions
+for jd in job_descriptions/*.txt; do
+    python resume_optimizer.py resume.tex "$jd" --jd -o "output/$(basename $jd .txt)/"
+done
+```
+
+#### Integration with CI/CD
+```yaml
+# GitHub Actions example
+- name: Optimize Resume
+  run: |
+    python resume_optimizer.py resume.tex job_description.txt --jd
+    mv optimized_resume_*/resume_optimized.pdf artifacts/
+```
+
+### Input Formats
+
+**keywords.txt** (multiple formats supported):
+```
+# Comma-separated
+Python, C++, Machine Learning, Distributed Systems, CUDA, PyTorch
+
+# Line-separated
+Python
+C++
+Machine Learning
+Distributed Systems
+```
+
+**job_description.txt**:
+```
+Senior Software Engineer - ML Infrastructure
+
+We're seeking an engineer with experience in:
+- Python and C++ for high-performance computing
+- Distributed systems and data pipelines
+- ML frameworks (PyTorch, TensorFlow)
+- GPU programming (CUDA/ROCm)
+```
+
+## Technical Details
+
+### LaTeX Preservation Rules
+- Maintains all `\begin{}` and `\end{}` environments
+- Preserves `\item` count and list structures
+- Respects custom commands and packages
+- Handles unicode and special characters
+- Maintains bibliography and citations
+
+### Optimization Constraints
+```python
+# Per-bullet-point word count enforcement
+original: "\item Developed web application using React"  # 6 words
+valid:    "\item Developed Python application using FastAPI"  # 6 words
+invalid:  "\item Developed distributed Python ML application"  # 7 words
+```
+
+### Error Handling
+- **LaTeX Compilation Errors**: Parses `pdflatex` output and highlights issues
+- **Structure Corruption**: Validates AST and falls back to original
+- **API Failures**: Retries with exponential backoff
+- **File System**: Creates timestamped backups
+
+## Command Reference
+
+```
+usage: resume_optimizer.py [-h] [-o OUTPUT] [--jd] [--pdf] [--no-pdf] [--keep-tex] resume input_file
+
+positional arguments:
+  resume                Path to LaTeX resume file (.tex)
+  input_file            Path to keywords or job description file (.txt)
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -o OUTPUT, --output OUTPUT
+                        Output LaTeX file path (default: timestamped folder)
+  --jd                  Input file contains job description (extract keywords)
+  --pdf                 Compile to PDF after optimization (default: True)
+  --no-pdf              Skip PDF compilation
+  --keep-tex            Keep intermediate .tex files
 ```
 
 ## VS Code Integration
 
-Run directly in VS Code terminal:
-```bash
-python resume_optimizer.py resume.tex keywords.txt
-```
-
-Or add to `.vscode/tasks.json`:
+### Task Configuration (`.vscode/tasks.json`)
 ```json
 {
-    "label": "Optimize Resume",
-    "type": "shell",
-    "command": "python",
-    "args": ["resume_optimizer.py", "resume.tex", "${input:keywordFile}"]
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Optimize Resume",
+            "type": "shell",
+            "command": "python",
+            "args": [
+                "resume_optimizer.py",
+                "${file}",
+                "${input:jobDescription}",
+                "--jd"
+            ],
+            "group": "build",
+            "presentation": {
+                "reveal": "always",
+                "panel": "new"
+            }
+        }
+    ],
+    "inputs": [
+        {
+            "id": "jobDescription",
+            "type": "promptString",
+            "description": "Path to job description file"
+        }
+    ]
 }
 ```
 
-## How It Works
-
-1. **Parse Structure**: Detects modular LaTeX files and combines content
-2. **Extract Keywords**: Processes job descriptions or keyword lists
-3. **AI Optimization**: Uses Azure OpenAI to strategically place keywords
-4. **Smart Mapping**: Routes keywords to relevant sections based on content
-5. **Preserve Format**: Maintains LaTeX structure and one-page constraint
-6. **Generate Output**: Creates PDF in timestamped folder
-
-## Requirements
-
-- Python 3.8+
-- Azure OpenAI API access
-- LaTeX distribution (TeX Live, MiKTeX, or MacTeX)
-- Dependencies: `langchain-openai`, `langchain-core`
-
-## Example Output
-
+### Launch Configuration (`.vscode/launch.json`)
+```json
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Debug Resume Optimizer",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/resume_optimizer.py",
+            "args": ["resume.tex", "job_description.txt", "--jd", "--keep-tex"],
+            "console": "integratedTerminal"
+        }
+    ]
+}
 ```
-Reading resume: resume.tex
-Found 5 subfiles
-  - subsections/education.tex
-  - subsections/experience.tex
-  - subsections/skills.tex
-Extracted keywords: React, Node.js, Python, AWS, Docker
-Optimizing resume...
-Optimized resume saved to: optimized_resume_20250601_143022/
-Compiling PDF...
-PDF compiled successfully
-Final output: optimized_resume_20250601_143022/resume_optimized.pdf
-Resume optimization completed!
+
+## Troubleshooting
+
+### Common Issues
+
+**"pdflatex not found"**
+- Ensure LaTeX is in PATH: `echo $PATH`
+- Windows: Run MiKTeX Console → Settings → Update PATH
+- macOS/Linux: Add to `.bashrc`: `export PATH="/usr/local/texlive/2023/bin/x86_64-linux:$PATH"`
+
+**"LaTeX Error: Lonely \item"**
+- LLM corrupted list structure
+- Check logs: `optimized_resume_*/ai_resume_optimized.log`
+- Use `--keep-tex` to inspect output
+
+**"Azure OpenAI Error"**
+- Verify API key and endpoint
+- Check deployment name matches
+- Ensure quota isn't exceeded
+
+### Debug Output
+```bash
+# Enable verbose logging
+export AZURE_OPENAI_LOG_LEVEL=debug
+python resume_optimizer.py resume.tex keywords.txt
 ```
+
+## Performance Optimization
+
+- **Caching**: Reuses keyword extraction across runs
+- **Parallel Processing**: Multi-file support planned
+- **Token Optimization**: Minimizes API calls through prompt engineering
+- **LaTeX Compilation**: Two-pass compilation for references
 
 ## Contributing
 
-1. Fork the repository
-2. Create a feature branch
-3. Commit your changes
-4. Push to the branch
-5. Create a Pull Request
+1. Fork repository
+2. Create feature branch: `git checkout -b feature/amazing-feature`
+3. Run tests: `pytest tests/`
+4. Commit changes: `git commit -m 'Add amazing feature'`
+5. Push branch: `git push origin feature/amazing-feature`
+6. Open Pull Request
 
-## Ethical Use
+### Development Setup
+```bash
+# Install dev dependencies
+pip install -r requirements-dev.txt
 
-This tool is designed to help candidates highlight relevant skills they actually possess. Use responsibly:
-- Only include keywords for technologies you have genuine experience with
-- Maintain truthful representations of your background
-- Use as a formatting and relevance tool, not for misrepresentation
+# Run tests
+pytest tests/ -v
+
+# Check formatting
+black resume_optimizer.py --check
+flake8 resume_optimizer.py
+```
+
+## Ethical Considerations
+
+This tool optimizes presentation, not fabrication:
+- ✅ Highlight existing skills with relevant keywords
+- ✅ Improve ATS compatibility for qualified candidates
+- ❌ Don't add skills you don't possess
+- ❌ Don't misrepresent experience levels
 
 ## License
 
-MIT License
+This project is licensed under the [MIT License](./LICENSE).
 
-Copyright (c) 2025 Pranav Pushkar Mishra
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
 
 ## Support
 
-- 📧 Contact: pmishr23@uic.edu
-- 🔗 Portfolio: [portfolio-pranav-mishra](https://portfolio-pranav-mishra-paranoid.vercel.appp)
-- 💼 LinkedIn: [pranavmishrabarca](https://www.linkedin.com/in/pranavgamedev//)
+- 📧 Email: pmishr23@uic.edu
+- 🔗 Portfolio: [portfolio-pranav-mishra.vercel.app](https://portfolio-pranav-mishra.vercel.app)
+- 💼 LinkedIn: [linkedin.com/in/pranavgamedev](https://www.linkedin.com/in/pranavgamedev/)
+- 🐛 Issues: [GitHub Issues](https://github.com/yourusername/resumecraft/issues)
 
 ---
 
-*Built with ❤️ and a healthy dose of automation*
+*Built with ❤️ and respect for both candidates and recruiters*
