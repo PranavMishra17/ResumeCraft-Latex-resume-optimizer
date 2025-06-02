@@ -11,19 +11,19 @@ ResumeCraft uses LLM-powered analysis to intelligently optimize LaTeX resumes fo
 ## Technical Architecture
 
 ### Core Innovation: Component-Level Intelligence
-- **LLM Component Detection**: Automatically identifies which resume bullets can be meaningfully rewritten (skips education titles, company names)
-- **Keyword Usage Tracking**: Enforces maximum 2 occurrences per keyword to prevent spam
-- **Strict Word Limits**: ±4 word constraint maintains resume formatting
+- **Component Detection**: Identifies modifiable bullets (skips headers, titles).
+- **Semantic Keyword Mapping**: Inserts keywords only where contextually relevant.
+- **Frequency Control**: Max 2 uses per keyword, no spamming.
 - **Surgical Reconstruction**: Targeted line replacement preserves document structure
 
 ### Optimization Flow
-1. **Keyword Extraction**: Extract 8-10 relevant keywords from job descriptions using LLM analysis
-2. **Existing Usage Analysis**: Count current keyword occurrences in resume
-3. **Component Detection**: LLM identifies changeable components (project descriptions, technical work, implementations)
-4. **Smart Distribution**: Assign 1-2 keywords per component, prioritizing least-used keywords
-5. **Constraint Optimization**: Rewrite with strict word count enforcement (±4 words)
-6. **Usage Tracking**: Update keyword counters in real-time, stop at 2 occurrences maximum
-7. **Validation & Reconstruction**: Verify LaTeX structure and reconstruct document
+1. **Keyword Extraction** – LLM extracts key terms from job description.
+2. **Resume Analysis** – Detects keyword presence, filters static content.
+3. **Component Detection** – Identifies eligible lines for rewriting.
+4. **Keyword Assignment** – Distributes keywords to best-fit sections.
+5. **Constraint Rewriting** – Rewrites with equal/fewer words, excludes LaTeX in word count.
+6. **Usage Tracking** – Limits keyword frequency during generation.
+7. **Validation** – Verifies LaTeX syntax, rebuilds final resume as pdf.
 
 ### Key Algorithms
 - **Semantic Component Analysis**: LLM distinguishes between descriptive content vs. static information
