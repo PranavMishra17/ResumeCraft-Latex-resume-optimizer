@@ -14,13 +14,25 @@ import shutil
 from langchain_openai import AzureChatOpenAI
 from langchain_core.messages import SystemMessage, HumanMessage
 from datetime import datetime
+import logging
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.StreamHandler(sys.stdout),
+        logging.FileHandler('resume_optimizer.log', encoding='utf-8')
+    ]
+)
+logger = logging.getLogger(__name__)
 
 class Config:
     """Configuration for Azure OpenAI"""
     AZURE_DEPLOYMENT = "VARELab-GPT4o"
     AZURE_API_KEY = ""
     AZURE_API_VERSION = "2024-08-01-preview"
-    AZURE_ENDPOINT = os.getenv("AZURE_ENDPOINT", "")  # Fallback URL
+    AZURE_ENDPOINT = os.getenv("AZURE_ENDPOINT", "https://vare-labs-azure-openai-resource.openai.azure.com/")  # Fallback URL
     TEMPERATURE = 0.25
 
 class ResumeOptimizer:
@@ -28,10 +40,10 @@ class ResumeOptimizer:
         self.config = Config()
         
         # Debug configuration
-        print("Initializing Azure OpenAI client...")
-        print(f" AZURE_DEPLOYMENT = {self.config.AZURE_DEPLOYMENT}")
-        print(f" AZURE_ENDPOINT = {self.config.AZURE_ENDPOINT}")
-        print(f" AZURE_API_VERSION = {self.config.AZURE_API_VERSION}")
+        logger.info("Initializing Azure OpenAI client...")
+        logger.info(f" AZURE_DEPLOYMENT = {self.config.AZURE_DEPLOYMENT}")
+        logger.info(f" AZURE_ENDPOINT = {self.config.AZURE_ENDPOINT}")
+        logger.info(f" AZURE_API_VERSION = {self.config.AZURE_API_VERSION}")
         
         # Validate configuration
         if not self.config.AZURE_ENDPOINT:
@@ -50,9 +62,9 @@ class ResumeOptimizer:
                 azure_endpoint=self.config.AZURE_ENDPOINT,
                 temperature=self.config.TEMPERATURE
             )
-            print("Azure OpenAI client initialized successfully!")
+            logger.info("Azure OpenAI client initialized successfully!")
         except Exception as e:
-            print(f"Error initializing Azure OpenAI client: {e}")
+            logger.error(f"Error initializing Azure OpenAI client: {e}")
             sys.exit(1)
 
     def read_file(self, filepath):
@@ -207,34 +219,37 @@ class ResumeOptimizer:
         combined_content, subfile_contents = self.parse_subfiles(latex_content, base_dir)
 
         messages = [
-            SystemMessage(content="""You are a LaTeX resume optimization expert. Your task is to modify a LaTeX resume to incorporate relevant keywords while STRICTLY maintaining or reducing length.
+            SystemMessage(content="""You are a LaTeX resume optimization expert. Your task is to modify a LaTeX resume to incorporate AT LEAST 85% of the provided keywords while maintaining structure.
 
-CRITICAL LENGTH CONSTRAINTS:
-- Each \\item bullet point must have EQUAL OR FEWER words than the original
-- Count words carefully - NEVER exceed original word count per item
-- Remove filler words like "various", "multiple", "different" to make room for keywords
-- Replace generic terms with specific keywords when possible
-- If you can't fit a keyword, DON'T force it - maintain readability
+MANDATORY KEYWORD INTEGRATION RULES:
+- You MUST integrate at least 85% of provided keywords
+- Replace generic terms with specific keywords aggressively
+- If a keyword doesn't fit perfectly, find creative ways to include it
+- Prioritize keyword density over perfect flow (but maintain readability)
+
+REPLACEMENT STRATEGY:
+- "application" → "Python application"
+- "development" → "C++ development"  
+- "system" → "distributed system"
+- "learning" → "machine learning"
+- "processing" → "data processing"
+- "performance" → "software optimization"
+- "framework" → "robotics framework"
+- "deployment" → "CI/CD deployment"
+- "computing" → "GPU/CPU computing"
+- Add specifics: "optimized" → "optimized for x86 architecture"
+
+LENGTH CONSTRAINTS:
+- Each \\item must have EQUAL OR FEWER words than original
+- Remove filler words to make space: "various", "multiple", "helped", "assisted"
+- Use abbreviations if needed: "development" → "dev", "infrastructure" → "infra"
 
 LATEX STRUCTURE RULES:
-- NEVER add, remove, or move \\item commands
-- NEVER modify \\begin{itemize}, \\end{itemize}, or any list environments
-- NEVER change document structure or formatting commands
-- ONLY modify the text content after \\item commands
-- Preserve ALL LaTeX commands exactly as they appear
+- NEVER add/remove \\item commands or list environments
+- NEVER move \\item outside their \\begin{itemize}...\\end{itemize} blocks
+- Preserve ALL LaTeX commands exactly
 
-KEYWORD PLACEMENT:
-- Replace existing terms with relevant keywords
-- Focus on job-specific technical terms
-- Maintain grammatical correctness
-- Don't repeat keywords excessively
-
-WORD COUNT ENFORCEMENT:
-- Original: "Developed web application using React" (5 words)
-- Good: "Developed Python application using ML" (5 words)
-- Bad: "Developed distributed Python application using machine learning" (8 words)
-
-Return ONLY the modified LaTeX code - no explanations, no markdown."""),
+Return ONLY the modified LaTeX code."""),
             HumanMessage(content=f"""Original LaTeX Resume:
 {combined_content}
 
@@ -243,9 +258,18 @@ Keywords to incorporate:
 
 STRICT REQUIREMENTS:
 1. Count words in each \\item and ensure the optimized version has EQUAL OR FEWER words
-2. NEVER add new \\item commands or modify list structure
+2. NEVER add new \\item commands or modify list structure  
 3. Replace generic words with keywords, don't add to existing content
 4. If LaTeX has "\\item Developed application using tools" - you can change to "\\item Developed Python application using multithreading" but NOT "\\item Developed distributed Python application using multithreading for data processing"
+5. NEVER move \\item commands outside their original \\begin{{itemize}}...\\end{{itemize}} blocks
+6. Maintain the EXACT same line structure - if original has \\item on line 45, keep it on line 45
+
+EXAMPLE REPLACEMENTS:
+- "system" → "distributed system"
+- "programming" → "C++/Python"
+- "performance" → "software performance tuning"
+- "processing" → "data processing"
+- "infrastructure" → "cloud infrastructure"
 
 Return ONLY the complete LaTeX code.""")
         ]
@@ -269,10 +293,111 @@ Return ONLY the complete LaTeX code.""")
                 print("Error: Cleaned content is empty!")
                 return latex_content, subfile_contents, latex_content
             
+            # Check keyword integration and retry if needed
+            keyword_list = [k.strip() for k in keywords.split(',')]
+            opt_keywords_found = sum(1 for kw in keyword_list if kw.lower() in optimized_content.lower())
+            opt_percentage = (opt_keywords_found / len(keyword_list)) * 100
+            
+            logger.info(f"Initial keyword integration: {opt_keywords_found}/{len(keyword_list)} ({opt_percentage:.1f}%)")
+            
+            # If integration is poor, try again with more aggressive prompt
+            if opt_percentage < 85:
+                logger.warning(f"First attempt only integrated {opt_percentage:.1f}% keywords. Retrying with stronger integration...")
+                
+                missing_keywords = [kw for kw in keyword_list if kw.lower() not in optimized_content.lower()]
+                
+                messages[1] = HumanMessage(content=f"""Original LaTeX Resume:
+{combined_content}
+
+Keywords to incorporate (MUST use at least 85%):
+{keywords}
+
+CRITICAL: You are missing these keywords: {', '.join(missing_keywords)}
+
+MANDATORY REPLACEMENTS - Find ANY way to include these:
+{chr(10).join([f'- MUST add "{kw}" - replace any similar term' for kw in missing_keywords])}
+
+AGGRESSIVE REPLACEMENT RULES:
+- "storage" → "data storage"
+- "processing" → "data processing"  
+- "concurrent" → "multithreading"
+- "optimization" → "software optimization"
+- "infrastructure" → "cloud infrastructure"
+- "architecture" → "x86 architecture"
+- "compute" → "GPU/CPU/FPGA"
+- "deployment" → "CI/CD deployment"
+- "framework" → "robotics framework"
+- "vehicle" or "car" → "autonomous driving"
+- Add architecture: "optimized" → "optimized for x86 architecture"
+- Add parallelism: "features" → "multithreading features"
+- Add storage: "data" → "data storage"
+
+EXAMPLE: If you see "developed system", change to "developed distributed system with data storage"
+
+Return ONLY the complete LaTeX code.""")
+                
+                response = self.client.invoke(messages)
+                optimized_content = response.content.strip()
+                optimized_content = self.clean_latex_output(optimized_content)
+            
             # Validate the optimized content
+            logger.info("Validating optimized LaTeX structure...")
             if not self.validate_optimized_content(combined_content, optimized_content):
-                print("Warning: Validation failed! Using original content.")
+                logger.error("Validation failed! Falling back to original content.")
+                logger.info("This means the LLM corrupted the LaTeX structure (missing braces, broken lists, etc.)")
+                
+                # Log what went wrong
+                with open('failed_optimization.tex', 'w', encoding='utf-8') as f:
+                    f.write(optimized_content)
+                logger.info("Failed optimization saved to failed_optimization.tex for debugging")
+                
                 return latex_content, subfile_contents, latex_content
+            
+            # Show keyword integration analysis
+            logger.info("\n--- Keyword Integration Analysis ---")
+            
+            # Count keywords in original vs optimized
+            orig_keywords_found = sum(1 for kw in keyword_list if kw.lower() in combined_content.lower())
+            opt_keywords_found = sum(1 for kw in keyword_list if kw.lower() in optimized_content.lower())
+            
+            orig_percentage = (orig_keywords_found / len(keyword_list)) * 100
+            opt_percentage = (opt_keywords_found / len(keyword_list)) * 100
+            
+            logger.info(f"Original keyword match: {orig_keywords_found}/{len(keyword_list)} ({orig_percentage:.1f}%)")
+            logger.info(f"Optimized keyword match: {opt_keywords_found}/{len(keyword_list)} ({opt_percentage:.1f}%)")
+            logger.info(f"Improvement: +{opt_percentage - orig_percentage:.1f}%")
+            
+            if opt_percentage < 85:
+                logger.warning(f"Only {opt_percentage:.1f}% keywords integrated (target: 85%+)")
+                logger.info("Keywords missing:")
+                for kw in keyword_list:
+                    if kw.lower() not in optimized_content.lower():
+                        logger.info(f"  - {kw}")
+            
+            # Show detailed changes
+            logger.info("\n--- Content Changes Preview ---")
+            original_items = re.findall(r'\\item\s+(.+?)(?=\\item|\\end|\\section)', combined_content, re.DOTALL)[:5]
+            optimized_items = re.findall(r'\\item\s+(.+?)(?=\\item|\\end|\\section)', optimized_content, re.DOTALL)[:5]
+            
+            changes_made = 0
+            for i, (orig, opt) in enumerate(zip(original_items, optimized_items)):
+                orig_clean = orig.strip().replace('\n', ' ')
+                opt_clean = opt.strip().replace('\n', ' ')
+                
+                if orig_clean != opt_clean:
+                    changes_made += 1
+                    logger.info(f"\n[Item {i+1}] CHANGED:")
+                    logger.info(f"FROM: {orig_clean}")
+                    logger.info(f"TO:   {opt_clean}")
+                    
+                    # Highlight new keywords
+                    for kw in keyword_list:
+                        if kw.lower() in opt_clean.lower() and kw.lower() not in orig_clean.lower():
+                            logger.info(f"      [+] Added keyword: {kw}")
+                else:
+                    logger.debug(f"[Item {i+1}] NO CHANGE")
+            
+            logger.info(f"\nTotal items changed: {changes_made}/{len(original_items)}")
             
             return optimized_content, subfile_contents, latex_content
             
@@ -283,29 +408,56 @@ Return ONLY the complete LaTeX code.""")
     def validate_optimized_content(self, original, optimized):
         """Validate that optimized content maintains structure and word count"""
         # Check for LaTeX structure integrity
-        original_items = len(re.findall(r'\\item', original))
-        optimized_items = len(re.findall(r'\\item', optimized))
+        original_items = re.findall(r'\\item\s', original)
+        optimized_items = re.findall(r'\\item\s', optimized)
         
-        if original_items != optimized_items:
-            print(f"Warning: \\item count mismatch! Original: {original_items}, Optimized: {optimized_items}")
+        if len(original_items) != len(optimized_items):
+            logger.error(f"\\item count mismatch! Original: {len(original_items)}, Optimized: {len(optimized_items)}")
             return False
             
         # Check for balanced braces
         if original.count('{') != optimized.count('{') or original.count('}') != optimized.count('}'):
-            print("Warning: Brace mismatch detected!")
+            logger.error(f"Brace mismatch! Original: {{{original.count('{')}}}, {{{original.count('}')}}}, Optimized: {{{optimized.count('{')}}}, {{{optimized.count('}')}}}")
+            
+            # Find where braces are missing
+            orig_lines = original.split('\n')
+            opt_lines = optimized.split('\n')
+            for i, (orig_line, opt_line) in enumerate(zip(orig_lines[:min(len(orig_lines), len(opt_lines))], opt_lines)):
+                orig_open = orig_line.count('{')
+                orig_close = orig_line.count('}')
+                opt_open = opt_line.count('{')
+                opt_close = opt_line.count('}')
+                if orig_open != opt_open or orig_close != opt_close:
+                    logger.error(f"Brace mismatch at line {i+1}:")
+                    logger.error(f"  Original: {orig_line[:100]}")
+                    logger.error(f"  Optimized: {opt_line[:100]}")
+                    break
             return False
             
         # Check for balanced environments
         for env in ['itemize', 'enumerate', 'description']:
-            orig_begin = len(re.findall(rf'\\begin\{{{env}\}}', original))
-            orig_end = len(re.findall(rf'\\end\{{{env}\}}', original))
-            opt_begin = len(re.findall(rf'\\begin\{{{env}\}}', optimized))
-            opt_end = len(re.findall(rf'\\end\{{{env}\}}', optimized))
+            orig_begin = original.count(f'\\begin{{{env}}}')
+            orig_end = original.count(f'\\end{{{env}}}')
+            opt_begin = optimized.count(f'\\begin{{{env}}}')
+            opt_end = optimized.count(f'\\end{{{env}}}')
             
             if orig_begin != opt_begin or orig_end != opt_end:
-                print(f"Warning: {env} environment mismatch!")
+                logger.error(f"{env} environment mismatch! Original: begin={orig_begin}, end={orig_end}, Optimized: begin={opt_begin}, end={opt_end}")
                 return False
-                
+        
+        # Check if all \items are within list environments
+        lines = optimized.split('\n')
+        in_list = False
+        for i, line in enumerate(lines):
+            if '\\begin{itemize}' in line or '\\begin{enumerate}' in line:
+                in_list = True
+            elif '\\end{itemize}' in line or '\\end{enumerate}' in line:
+                in_list = False
+            elif '\\item' in line and not in_list:
+                logger.error(f"Lonely \\item at line {i+1}: {line.strip()}")
+                return False
+        
+        logger.info("LaTeX structure validation passed")
         return True
 
     def clean_latex_output(self, content):
@@ -579,7 +731,7 @@ def main():
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         output_dir = f"optimized_resume_{timestamp}"
         os.makedirs(output_dir, exist_ok=True)
-        output_path = os.path.join(output_dir, f"{base_name}.tex")
+        output_path = os.path.join(output_dir, f"{base_name}_optimized.tex")
 
     # Initialize optimizer
     optimizer = ResumeOptimizer()

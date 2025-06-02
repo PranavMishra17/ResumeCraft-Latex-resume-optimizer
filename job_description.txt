@@ -1,0 +1,32 @@
+Software Engineer, AI Platform - New Grad
+Mountain View, California (HQ)
+
+40%
+Resume Match
+4 of 10 keywords
+Simplify
+Simplify
+Who We Are 
+
+Nuro exists to better everyday life through robotics. Founded in 2016, Nuro has spent eight years developing autonomous driving (AD) technology and commercializing AD applications. The Nuro Driver™ is our world-class autonomous driving system that combines AD hardware with our generalized AI-first self-driving software. Built to learn and improve through data, the Nuro Driver™ is one of the few driverless autonomous technologies on public roads today. 
+
+Nuro has raised over $2B in capital from Fidelity, Bailie Gifford, T. Rowe Price, Google, and other leading investors. We’ve partnered with some of the world’s most respected brands including Uber, FedEx, Domino’s, Walmart, Kroger, and 7-Eleven.
+
+About the Role
+
+Our software team is growing, and we are looking for talented engineers who are graduating by July 2025 to join us and be instrumental to one of the following areas: Data Platform, Onboard Systems, ML Infrastructure, Simulation, or Technical Infrastructure teams.
+
+About the Work
+
+Depending on your skill set and areas of interest you will work on some or all of the following:
+
+Data Platform: The Data Platform serves as a comprehensive management system for Nuro AI Driver's data, labels, and metrics, facilitating seamless access functionality. The team focuses on data annotation across various domains, including 2D/3D perception, mapping, behavior trajectory, and language/text. It also handles data ingestion and mining, employing methods such as heuristics and embedding search. Additionally, the platform supports the autonomy evaluation infrastructure by providing detailed introspection. 
+Onboard Systems: Our onboard system team’s software engineers provide a reliable and high-performance platform that allows our autonomy teams to integrate their autonomy software and algorithms that work across various self-driving platforms. This work requires close collaboration with our software teams, hardware teams, and systems/safety team to make sure new software and hardware work together safely and reliably and resolve onboard error and performance problems.
+Technical Infrastructure: this group owns few fundamental services for entire engineering organizations: generic compute platform to host mission-critical workflows such as data processing and simulation, storage management service which manages hundreds of PB of data, cloud infrastructure serves as IaaC which provisions and maintains all cloud resources, engineering productivity provides tools such as build and CI/CD to make engineering work more efficient.
+About You
+
+You have deep expertise and prior experience in some or many of the following areas:
+
+You are a current Bachelor’s Degree or Master’s Degree candidate in Computer Science, Electrical Engineering, Robotics, or related field, graduating before July 2025. 
+You have experience in one or more of the following areas: large-scale distributed systems; data storage and processing systems; advanced algorithms using C++ and Python; machine learning, multithreading; x86 architecture; and software performance tuning and optimization, robotics software frameworks, different compute modalities (CPU, GPU, FPGA) etc.
+You have strong problem-solving and programming skills.

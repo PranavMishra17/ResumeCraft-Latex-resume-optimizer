@@ -1,2 +1,5 @@
 weasyprint
 pandoc
+langchain
+langchain-openai
+langchain-core

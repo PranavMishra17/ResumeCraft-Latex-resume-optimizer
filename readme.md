@@ -26,8 +26,7 @@ ResumeCraft leverages Azure OpenAI's GPT-4 to intelligently optimize LaTeX resum
 
 ### 1. Clone Repository
 ```bash
-git clone https://github.com/yourusername/resumecraft.git
-cd resumecraft
+git clone https://github.com/PranavMishra17/ResumeCraft-Latex-resume-optimizer
 ```
 
 ### 2. Python Dependencies
