@@ -35,14 +35,16 @@ class ResumeSection:
 
 class Config:
     """Configuration for Azure OpenAI"""
-    AZURE_DEPLOYMENT = "VARELab-GPT4o"
-    AZURE_API_KEY = "your-azure-api-key-here"  # Set this in your environment variables
+    AZURE_DEPLOYMENT = os.getenv("AZURE_DEPLOYMENT", "fallback_deployment_here")  # Set this in your environment variables
+    # Ensure you set this in your environment variables
+    AZURE_API_KEY = os.getenv("AZURE_API_KEY", "fallback_api_key_here")
     if not AZURE_API_KEY:
         logger.error("AZURE_API_KEY must be set in environment variables.")
         sys.exit(1)
     AZURE_API_VERSION = "2024-08-01-preview"
-    AZURE_ENDPOINT = os.getenv("AZURE_ENDPOINT", "https://vare-labs-azure-openai-resource.openai.azure.com/")
+    AZURE_ENDPOINT = os.getenv("AZURE_ENDPOINT", "fallback_endpoint_here")  # Set this in your environment variables
     TEMPERATURE = 0.2
+
 
 class SimplifiedResumeOptimizer:
     def __init__(self):
