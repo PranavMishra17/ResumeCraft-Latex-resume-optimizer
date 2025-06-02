@@ -78,28 +78,128 @@ from langchain_community.chat_models import ChatOllama
 self.client = ChatOllama(model="llama2", base_url="http://localhost:11434")
 ```
 
-### 3. LaTeX Distribution
+### 3. LaTeX Distribution (Required for PDF compilation)
 
-**Windows - MiKTeX**
+LaTeX is required to compile `.tex` files to PDF. Choose based on your platform and storage availability:
+
+#### Windows - MiKTeX
+**Recommended for Windows users**
+
 ```bash
-# Download from https://miktex.org/download
-# Verify installation
-pdflatex --version
+# Download installer from https://miktex.org/download
+# Two installation options:
 ```
 
-**macOS - MacTeX**
+**Basic Installation** (~200MB):
+- Core LaTeX packages only
+- Downloads missing packages automatically during compilation
+- Suitable for most resume templates
+
+**Complete Installation** (~2.5GB):
+- All LaTeX packages included
+- No internet required during compilation
+- Recommended for complex documents
+
+**Installation Steps:**
+1. Download MiKTeX installer
+2. Run as administrator
+3. Choose "Install for all users" (recommended)
+4. Enable "Always install missing packages on-the-fly"
+5. Verify: Open Command Prompt → `pdflatex --version`
+
+#### macOS - MacTeX
+**Full-featured LaTeX for Mac**
+
 ```bash
 # Download from https://www.tug.org/mactex/
-which pdflatex
 ```
 
-**Linux - TeX Live**
+**MacTeX Full** (~4GB):
+- Complete TeX Live distribution
+- GUI applications (TeXShop, LaTeXiT)
+- All packages included
+- Most reliable option
+
+**BasicTeX** (~80MB):
+- Minimal command-line only
+- Requires manual package installation
+- For experienced users only
+
+**Installation:**
+1. Download `.pkg` file (allow 30-60 minutes)
+2. Double-click to install 
+3. Add to PATH: Add `/usr/local/texlive/2023/bin/universal-darwin` to `~/.zshrc`
+4. Verify: `which pdflatex`
+
+#### Linux - TeX Live
+**Native LaTeX for Linux distributions**
+
+**Ubuntu/Debian:**
 ```bash
-# Ubuntu/Debian
+# Full installation (~3GB)
+sudo apt-get update
 sudo apt-get install texlive-full
 
-# Fedora  
+# Minimal installation (~500MB) - may need additional packages
+sudo apt-get install texlive-latex-base texlive-latex-recommended
+
+# Essential packages for resumes
+sudo apt-get install texlive-fonts-recommended texlive-latex-extra
+```
+
+**Fedora/RHEL:**
+```bash
+# Complete installation (~3GB)
 sudo dnf install texlive-scheme-full
+
+# Basic installation (~800MB)
+sudo dnf install texlive-scheme-basic texlive-latex
+```
+
+**Arch Linux:**
+```bash
+# Full installation (~3GB)
+sudo pacman -S texlive-most texlive-langextra
+
+# Basic installation (~600MB)
+sudo pacman -S texlive-core texlive-latexextra
+```
+
+#### Storage Requirements Summary
+| Distribution | Basic | Full | Download Time |
+|--------------|-------|------|---------------|
+| MiKTeX (Windows) | 200MB | 2.5GB | 5-45 min |
+| MacTeX (macOS) | 80MB | 4GB | 10-60 min |
+| TeX Live (Linux) | 500MB | 3GB | 10-30 min |
+
+#### Installation Verification
+Test your installation works:
+```bash
+# Check LaTeX is installed
+pdflatex --version
+
+# Test compilation (creates test.pdf)
+echo '\documentclass{article}\begin{document}Hello World\end{document}' > test.tex
+pdflatex test.tex
+```
+
+#### Troubleshooting Installation
+**Windows PATH issues:**
+```bash
+# Add to PATH manually:
+# C:\Program Files\MiKTeX\miktex\bin\x64\
+```
+
+**macOS permission issues:**
+```bash
+# Fix permissions
+sudo chown -R $(whoami) /usr/local/texlive
+```
+
+**Linux missing packages:**
+```bash
+# Install additional packages as needed
+sudo apt-get install texlive-science texlive-pictures
 ```
 
 ## Usage
@@ -137,19 +237,41 @@ done
 ### Input Formats
 
 **Job Description (Recommended)**
-```text
-Senior ML Engineer - Computer Vision
+Simply copy-paste any job posting text into a `.txt` file. The tool handles messy formatting automatically:
 
-Requirements:
-- Python, C++, PyTorch
-- Distributed systems experience
-- CUDA programming
-- Cloud infrastructure (AWS/GCP)
+```text
+Software Engineer @ TechCorp
+$120K-180K | Remote | Full-time
+
+We're looking for someone with:
+• Python/JavaScript experience  
+• Knowledge of AWS, Docker, Kubernetes
+• Machine learning background preferred
+• 3+ years building scalable systems
+
+Apply now! Email: jobs@techcorp.com
 ```
 
 **Keywords List**
+Flexible format support - use whatever's convenient:
+
 ```text
-Python, C++, PyTorch, CUDA, distributed systems, cloud infrastructure
+# Comma-separated (single line)
+Python, JavaScript, AWS, Docker, Kubernetes, machine learning
+
+# Line-separated (multi-line)  
+Python
+JavaScript
+AWS
+Docker
+Kubernetes
+machine learning
+
+# Mixed format (also works)
+Python, JavaScript
+AWS
+Docker, Kubernetes
+machine learning
 ```
 
 ## Troubleshooting
@@ -273,4 +395,4 @@ MIT License - see [LICENSE](./LICENSE)
 
 ---
 
-*Built with ❤️ for intelligent resume optimization*
+*Happy job hunting!*
