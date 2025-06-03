@@ -1,10 +1,16 @@
-machine learning
-GPU
-Python
-C++
-data ingestion
-cloud infrastructure
-x86
-problem-solving
-FPGA
-CI/CD
+Postgres
+Redis
+JS
+Ruby
+Heroku
+Next.js
+Salesforce
+continuous integration
+TypeScript
+backend
+end-to-end
+product features
+fintech
+technical architecture
+full stack
+API

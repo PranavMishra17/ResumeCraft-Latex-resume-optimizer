@@ -294,7 +294,7 @@ Return ONLY the rewritten bullet.""")
         
         return True
 
-    def optimize_resume(self, latex_content: str, keywords_or_jd: str, is_jd: bool = False) -> str:
+    def optimize_resume(self, latex_content: str, keywords_or_jd: str, is_jd: bool = False, strict: bool = False) -> str:
         """Main optimization method - focused on changeable components only"""
         
         # Extract keywords
@@ -494,6 +494,7 @@ def main():
     parser.add_argument("--jd", action="store_true", help="Input file contains job description")
     parser.add_argument("--pdf", action="store_true", default=True, help="Compile to PDF")
     parser.add_argument("--no-pdf", action="store_true", help="Skip PDF compilation")
+    parser.add_argument("--strict", action="store_true", help="Enable strict mode with retry logic for character limits")
     
     args = parser.parse_args()
 
@@ -530,7 +531,8 @@ def main():
     optimized_latex = optimizer.optimize_resume(
         latex_content, 
         input_content, 
-        is_jd=args.jd
+        is_jd=args.jd,
+        strict=args.strict
     )
 
     # Save optimized resume
