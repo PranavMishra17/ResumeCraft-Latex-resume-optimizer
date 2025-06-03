@@ -16,6 +16,7 @@ from datetime import datetime
 import logging
 from dataclasses import dataclass
 from typing import List, Dict, Set
+import config
 
 logging.basicConfig(
     level=logging.INFO,
@@ -33,22 +34,10 @@ class ResumeSection:
     end_line: int
     original_content: str
 
-class Config:
-    """Configuration for Azure OpenAI"""
-    AZURE_DEPLOYMENT = os.getenv("AZURE_DEPLOYMENT", "fallback_deployment_here")  # Set this in your environment variables
-    # Ensure you set this in your environment variables
-    AZURE_API_KEY = os.getenv("AZURE_API_KEY", "fallback_api_key_here")
-    if not AZURE_API_KEY:
-        logger.error("AZURE_API_KEY must be set in environment variables.")
-        sys.exit(1)
-    AZURE_API_VERSION = "2024-08-01-preview"
-    AZURE_ENDPOINT = os.getenv("AZURE_ENDPOINT", "fallback_endpoint_here")  # Set this in your environment variables
-    TEMPERATURE = 0.2
-
 
 class SimplifiedResumeOptimizer:
     def __init__(self):
-        self.config = Config()
+        self.config = config.Config()
         
         logger.info("Initializing Azure OpenAI client...")
         
