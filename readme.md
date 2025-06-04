@@ -6,7 +6,7 @@
 
 ResumeCraft uses LLM-powered analysis to intelligently optimize LaTeX resumes for ATS systems. Unlike simple keyword stuffing, it identifies changeable resume components, enforces strict word limits, and tracks keyword usage to maintain natural content flow.
 
-[!Screenshot](https://github.com/PranavMishra17/ResumeCraft-Latex-resume-optimizer/blob/c5eb36a9bb31ac2a28450fd9faf8770bad4118ed/resume.png)
+![Screenshot](https://github.com/PranavMishra17/ResumeCraft-Latex-resume-optimizer/blob/c5eb36a9bb31ac2a28450fd9faf8770bad4118ed/resume.png)
 
 > **For Recruiters:** This tool demonstrates semantic analysis, LaTeX AST manipulation, constraint solving, and real-time validation—probably more engineering skill than any keyword could convey. 😉
 
