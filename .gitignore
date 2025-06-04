@@ -174,3 +174,9 @@ output/
 
 results/
 results\
+*.aux
+.DS_Store
+*.fdb_latexmk
+*.fls
+*.gz
+*.pdf
