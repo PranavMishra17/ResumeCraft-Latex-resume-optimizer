@@ -16,7 +16,7 @@ from datetime import datetime
 import logging
 from dataclasses import dataclass
 from typing import List, Dict, Set, Tuple
-import config
+from config import get_llm_client, Config
 
 # For tex to pdf conversion
 import requests
@@ -46,26 +46,9 @@ class ResumeSection:
 
 class SimplifiedResumeOptimizer:
     def __init__(self):
-        self.config = config.Config()
-
-        logger.info("Initializing Azure OpenAI client...")
-
-        if not self.config.AZURE_ENDPOINT or not self.config.AZURE_API_KEY:
-            print("Error: AZURE_ENDPOINT and AZURE_API_KEY must be set.")
-            sys.exit(1)
-
-        try:
-            self.client = AzureChatOpenAI(
-                azure_deployment=self.config.AZURE_DEPLOYMENT,
-                api_key=self.config.AZURE_API_KEY,
-                api_version=self.config.AZURE_API_VERSION,
-                azure_endpoint=self.config.AZURE_ENDPOINT,
-                temperature=self.config.TEMPERATURE
-            )
-            logger.info("Azure OpenAI client initialized successfully!")
-        except Exception as e:
-            logger.error(f"Error initializing Azure OpenAI client: {e}")
-            sys.exit(1)
+        logger.info("Initializing LLM client...")
+        self.client = get_llm_client()
+        self.config = Config()
 
     def read_file(self, filepath):
         """Read file content"""

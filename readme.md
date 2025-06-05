@@ -210,8 +210,8 @@ git commit -m 'Add enhancement'
 | Name             | GitHub                                           | LinkedIn                                        |
 |------------------|--------------------------------------------------|-------------------------------------------------|
 | Pranav Mishra    | [@PranavMishra17](https://github.com/PranavMishra17) | [Pranav Mishra](https://www.linkedin.com/in/pranavgamedev/) |
-| Pranav Vasist    | [@Pranav2701](https://github.com/pranav2701)         | [Pranav Vasist](https://www.linkedin.com/in/pranav-vasist/)   |
-| Kranti Yeole     | [@KrantiYeole20](https://github.com/krantiyeole20)   | [Kranti Yeole](https://www.linkedin.com/in/krantiyeole/)     |
+| Pranav Vasist    | [@Pranav2701](https://github.com/pranav2701)         | [Pranav Vasist](https://www.linkedin.com/in/pranav-vasist/) |
+| Kranti Yeole     | [@KrantiYeole20](https://github.com/krantiyeole20)   | [Kranti Yeole](https://www.linkedin.com/in/krantiyeole/)    |
 
 
 
