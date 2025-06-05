@@ -2,6 +2,7 @@
 """
 Simplified LaTeX Resume Optimizer
 Optimizes resume by section blocks, not individual bullets.
+Modified to use OpenAI API instead of Azure OpenAI.
 """
 
 import argparse
@@ -10,12 +11,12 @@ import sys
 import re
 import subprocess
 from pathlib import Path
-from langchain_openai import AzureChatOpenAI
+from langchain_openai import ChatOpenAI  # Changed from AzureChatOpenAI
 from langchain_core.messages import SystemMessage, HumanMessage
 from datetime import datetime
 import logging
 from dataclasses import dataclass
-from typing import List, Dict, Set, Tuple
+from typing import List, Dict, Set
 import config
 
 logging.basicConfig(
@@ -34,30 +35,30 @@ class ResumeSection:
     start_line: int
     end_line: int
     original_content: str
-    existing_keywords: List[str]
 
 
 class SimplifiedResumeOptimizer:
     def __init__(self):
         self.config = config.Config()
 
-        logger.info("Initializing Azure OpenAI client...")
+        logger.info("Initializing OpenAI client...")
 
-        if not self.config.AZURE_ENDPOINT or not self.config.AZURE_API_KEY:
-            print("Error: AZURE_ENDPOINT and AZURE_API_KEY must be set.")
+        # Check for OpenAI API key instead of Azure credentials
+        if not self.config.OPENAI_API_KEY:
+            print("Error: OPENAI_API_KEY must be set.")
             sys.exit(1)
 
         try:
-            self.client = AzureChatOpenAI(
-                azure_deployment=self.config.AZURE_DEPLOYMENT,
-                api_key=self.config.AZURE_API_KEY,
-                api_version=self.config.AZURE_API_VERSION,
-                azure_endpoint=self.config.AZURE_ENDPOINT,
+            # Initialize regular OpenAI client
+            self.client = ChatOpenAI(
+                api_key=self.config.OPENAI_API_KEY,
+                model=getattr(self.config, 'OPENAI_MODEL',
+                              'gpt-4'),  # Default to gpt-4
                 temperature=self.config.TEMPERATURE
             )
-            logger.info("Azure OpenAI client initialized successfully!")
+            logger.info("OpenAI client initialized successfully!")
         except Exception as e:
-            logger.error(f"Error initializing Azure OpenAI client: {e}")
+            logger.error(f"Error initializing OpenAI client: {e}")
             sys.exit(1)
 
     def read_file(self, filepath):
@@ -68,50 +69,6 @@ class SimplifiedResumeOptimizer:
         except Exception as e:
             print(f"Error reading {filepath}: {e}")
             sys.exit(1)
-
-    def extract_name_from_resume(self, latex_content: str) -> str:
-        """Extract name from LaTeX resume for PDF naming"""
-        # Look for common name patterns
-        patterns = [
-            r'\\name\{([^}]+)\}',
-            r'\\textbf\{\\huge\s+([^}]+)\}',
-            r'\\begin\{center\}\\textbf\{\\Large\s+([^}]+)\}',
-            r'\\textbf\{\\Large\s+([^}]+)\}',
-            r'\\huge\{([^}]+)\}',
-            r'\\Large\{([^}]+)\}'
-        ]
-
-        for pattern in patterns:
-            match = re.search(pattern, latex_content, re.IGNORECASE)
-            if match:
-                name = match.group(1).strip()
-                # Clean LaTeX commands from name
-                name = re.sub(r'\\[a-zA-Z]+\s*', '', name).strip()
-                if name and len(name.split()) <= 4:  # Reasonable name length
-                    return name
-
-        # Fallback: look for first capitalized words in document
-        lines = latex_content.split('\n')
-        for line in lines:
-            if '\\begin{document}' in line:
-                continue
-            words = re.findall(r'\b[A-Z][a-z]+(?:\s+[A-Z][a-z]+)*\b', line)
-            if words and len(words[0].split()) <= 4:
-                return words[0]
-
-        return "Resume"
-
-    def escape_latex_keywords(self, keywords: List[str]) -> List[str]:
-        """Escape special LaTeX characters in keywords"""
-        escaped = []
-        for keyword in keywords:
-            # Escape ampersand and other special characters
-            escaped_keyword = keyword.replace('&', '\\&')
-            escaped_keyword = escaped_keyword.replace('%', '\\%')
-            escaped_keyword = escaped_keyword.replace('$', '\\$')
-            escaped_keyword = escaped_keyword.replace('#', '\\#')
-            escaped.append(escaped_keyword)
-        return escaped
 
     def extract_keywords_from_jd(self, job_description):
         """Extract relevant keywords from job description"""
@@ -137,25 +94,22 @@ class SimplifiedResumeOptimizer:
         else:
             keywords = [kw.strip()
                         for kw in keyword_content.split('\n') if kw.strip()]
+        return keywords
 
-        # Escape LaTeX special characters
-        return self.escape_latex_keywords(keywords)
-
-    def extract_existing_keywords_in_component(self, component_content: str, target_keywords: List[str]) -> List[str]:
-        """Extract keywords that already exist in a specific component"""
-        existing = []
-        content_lower = component_content.lower()
+    def extract_existing_keywords(self, latex_content: str, target_keywords: List[str]) -> Set[str]:
+        """Extract keywords that already exist in the resume"""
+        existing = set()
+        content_lower = latex_content.lower()
 
         for keyword in target_keywords:
-            # Remove LaTeX escaping for comparison
-            keyword_clean = keyword.replace('\\&', '&').replace(
-                '\\%', '%').replace('\\$', '$').replace('\\#', '#')
-            if keyword_clean.lower() in content_lower:
-                existing.append(keyword)
+            if keyword.lower() in content_lower:
+                existing.add(keyword)
 
+        logger.info(
+            f"Found {len(existing)} existing keywords: {list(existing)}")
         return existing
 
-    def detect_changeable_components(self, latex_content: str, target_keywords: List[str]) -> List[ResumeSection]:
+    def detect_changeable_components(self, latex_content: str) -> List[ResumeSection]:
         """Use LLM to detect which components can be rewritten"""
 
         # Extract all bullet points from relevant sections
@@ -181,16 +135,12 @@ class SimplifiedResumeOptimizer:
                     j += 1
 
                 bullet_content = '\n'.join(bullet_lines)
-                existing_keywords = self.extract_existing_keywords_in_component(
-                    bullet_content, target_keywords)
-
                 bullets.append(ResumeSection(
                     name=f"{current_section}_bullet_{len(bullets)}",
                     content=bullet_content,
                     start_line=i,
                     end_line=j-1,
-                    original_content=bullet_content,
-                    existing_keywords=existing_keywords
+                    original_content=bullet_content
                 ))
 
         if not bullets:
@@ -242,130 +192,13 @@ Return only the indices (numbers) of CHANGEABLE bullets, comma-separated."""
             logger.info(
                 f"Detected {len(changeable_bullets)}/{len(bullets)} changeable components")
             for i, bullet in enumerate(changeable_bullets):
-                logger.info(
-                    f"  [{i}] {bullet.name}: existing keywords {bullet.existing_keywords}")
+                logger.info(f"  [{i}] {bullet.name}: {bullet.content[:60]}...")
 
             return changeable_bullets
 
         except Exception as e:
             logger.error(f"Error detecting changeable components: {e}")
             return bullets  # Fallback to all bullets
-
-    def smart_keyword_matching(self, components: List[ResumeSection], target_keywords: List[str]) -> Dict[str, List[str]]:
-        """Intelligently match keywords to components based on context and existing keywords"""
-
-        # Track keyword usage across all components
-        keyword_usage = {kw: 0 for kw in target_keywords}
-        component_assignments = {comp.name: [] for comp in components}
-
-        # First, account for existing keywords
-        for component in components:
-            for existing_kw in component.existing_keywords:
-                if existing_kw in keyword_usage:
-                    keyword_usage[existing_kw] += 1
-                    component_assignments[component.name].append(existing_kw)
-
-        # Get keywords that need placement (used < 2 times)
-        keywords_to_place = [kw for kw,
-                             count in keyword_usage.items() if count < 2]
-
-        if not keywords_to_place:
-            logger.info("All keywords already at optimal usage")
-            return component_assignments
-
-        # Use LLM to match remaining keywords to components
-        components_text = ""
-        for idx, comp in enumerate(components):
-            clean_content = re.sub(r'\\item\s*', '', comp.content).strip()
-            existing_kw_str = ", ".join(
-                comp.existing_keywords) if comp.existing_keywords else "none"
-            components_text += f"[{idx}] Existing keywords: {existing_kw_str}\nContent: {clean_content}\n\n"
-
-        keywords_text = ", ".join(keywords_to_place)
-
-        system_prompt = f"""Match these technical keywords to the most appropriate resume components based on context and relevance.
-
-Keywords to place: {keywords_text}
-
-Rules:
-1. Each keyword can be used maximum 2 times total across all components
-2. Each component should get 1-2 new keywords maximum
-3. Match keywords based on technical relevance and context
-4. Consider existing keywords in each component
-
-Return the assignments in this exact format:
-[component_index]: keyword1, keyword2
-[component_index]: keyword1
-
-Only return assignments for components that should get new keywords."""
-
-        messages = [
-            SystemMessage(content=system_prompt),
-            HumanMessage(content=f"Components:\n{components_text}")
-        ]
-
-        try:
-            response = self.client.invoke(messages)
-
-            # Parse LLM response
-            for line in response.content.strip().split('\n'):
-                if ':' in line:
-                    try:
-                        comp_idx_str, keywords_str = line.split(':', 1)
-                        comp_idx = int(comp_idx_str.strip().replace(
-                            '[', '').replace(']', ''))
-
-                        if 0 <= comp_idx < len(components):
-                            component = components[comp_idx]
-                            new_keywords = [
-                                kw.strip() for kw in keywords_str.split(',') if kw.strip()]
-
-                            # Validate assignments
-                            valid_keywords = []
-                            for kw in new_keywords:
-                                if kw in keywords_to_place and keyword_usage[kw] < 2:
-                                    valid_keywords.append(kw)
-                                    keyword_usage[kw] += 1
-
-                            if valid_keywords:
-                                component_assignments[component.name].extend(
-                                    valid_keywords)
-
-                    except (ValueError, IndexError):
-                        continue
-
-            # Log final assignments
-            logger.info("\n--- KEYWORD ASSIGNMENT STRATEGY ---")
-            for comp_name, assigned_kws in component_assignments.items():
-                if assigned_kws:
-                    logger.info(f"{comp_name}: {assigned_kws}")
-
-            return component_assignments
-
-        except Exception as e:
-            logger.error(f"Error in smart keyword matching: {e}")
-            # Fallback: simple distribution
-            return self.fallback_keyword_distribution(components, keywords_to_place)
-
-    def fallback_keyword_distribution(self, components: List[ResumeSection], keywords_to_place: List[str]) -> Dict[str, List[str]]:
-        """Fallback keyword distribution if LLM matching fails"""
-        component_assignments = {comp.name: list(
-            comp.existing_keywords) for comp in components}
-
-        kw_idx = 0
-        for component in components:
-            if kw_idx >= len(keywords_to_place):
-                break
-
-            # Assign 1-2 keywords per component
-            num_to_assign = min(2, len(keywords_to_place) - kw_idx)
-            for _ in range(num_to_assign):
-                if kw_idx < len(keywords_to_place):
-                    component_assignments[component.name].append(
-                        keywords_to_place[kw_idx])
-                    kw_idx += 1
-
-        return component_assignments
 
     def count_words_strict(self, text: str) -> int:
         """Count words strictly excluding LaTeX commands"""
@@ -380,33 +213,33 @@ Only return assignments for components that should get new keywords."""
                  and not w.isdigit()]
         return len(words)
 
-    def optimize_component_strict(self, component: ResumeSection, assigned_keywords: List[str]) -> str:
-        """Optimize component with upper word limit only"""
-        if not assigned_keywords:
+    def optimize_component_strict(self, component: ResumeSection, keywords_to_add: List[str]) -> str:
+        """Optimize component with strict ±4 word limit"""
+        if not keywords_to_add:
             return component.original_content
 
         original_word_count = self.count_words_strict(
             component.original_content)
-        max_words = original_word_count + 4  # Only upper limit
+        min_words = original_word_count - 4
+        max_words = original_word_count + 4
 
-        # Remove duplicates while preserving order
-        keywords = list(dict.fromkeys(assigned_keywords))
+        # Limit to 2 keywords max
+        keywords = keywords_to_add[:2]
 
         system_prompt = f"""Rewrite this resume bullet to include these keywords: {', '.join(keywords)}
 
 STRICT RULES:
-1. Maximum word count: {max_words} words (original: {original_word_count})
+1. Word count: {min_words}-{max_words} words (original: {original_word_count})
 2. Keep ALL LaTeX commands exactly (\\textbf, \\href, \\item, etc.)
-3. Preserve existing keywords that are already present
-4. Replace generic terms with new keywords where appropriate
-5. Maintain technical accuracy
+3. Replace generic terms with keywords
+4. Maintain technical accuracy
 
 EXAMPLES:
 - "developed system" → "developed distributed system"
 - "implemented framework" → "implemented robotics framework" 
 - "optimized performance" → "optimized CPU performance"
 
-Word count limit is CRITICAL. Do not exceed {max_words} words."""
+Word count is CRITICAL. Count carefully."""
 
         messages = [
             SystemMessage(content=system_prompt),
@@ -415,7 +248,7 @@ Word count limit is CRITICAL. Do not exceed {max_words} words."""
 
 Keywords to integrate: {', '.join(keywords)}
 
-Maximum word count: {max_words} words
+Target word count: {min_words}-{max_words} words
 Return ONLY the rewritten bullet.""")
         ]
 
@@ -427,12 +260,12 @@ Return ONLY the rewritten bullet.""")
             optimized = re.sub(r'```latex\s*', '', optimized)
             optimized = re.sub(r'```\s*', '', optimized)
 
-            # Word count validation (upper limit only)
+            # Strict word count validation
             new_word_count = self.count_words_strict(optimized)
 
-            if new_word_count > max_words:
+            if new_word_count < min_words or new_word_count > max_words:
                 logger.warning(
-                    f"Word count exceeded: {new_word_count} > {max_words}")
+                    f"Word count violation: {new_word_count} not in range [{min_words}, {max_words}]")
                 return component.original_content
 
             # Basic structure validation
@@ -462,7 +295,7 @@ Return ONLY the rewritten bullet.""")
         return True
 
     def optimize_resume(self, latex_content: str, keywords_or_jd: str, is_jd: bool = False, strict: bool = False) -> str:
-        """Main optimization method with smart keyword matching"""
+        """Main optimization method - focused on changeable components only"""
 
         # Extract keywords
         if is_jd:
@@ -473,45 +306,76 @@ Return ONLY the rewritten bullet.""")
 
         logger.info(f"Target keywords: {target_keywords}")
 
-        # Detect changeable components
-        changeable_components = self.detect_changeable_components(
+        # Find existing keywords and track their usage
+        existing_keywords = self.extract_existing_keywords(
             latex_content, target_keywords)
+        keyword_usage_count = {}
+
+        # Count existing usage
+        for keyword in target_keywords:
+            count = latex_content.lower().count(keyword.lower())
+            keyword_usage_count[keyword] = count
+            if count > 0:
+                logger.info(f"Keyword '{keyword}' already used {count} times")
+
+        # Only add keywords that are used less than 2 times
+        keywords_to_add = [
+            kw for kw in target_keywords if keyword_usage_count.get(kw, 0) < 2]
+
+        logger.info(f"Keywords to add: {keywords_to_add}")
+
+        if not keywords_to_add:
+            logger.info("All keywords already at max usage (2 times)")
+            return latex_content
+
+        # Detect changeable components using LLM
+        changeable_components = self.detect_changeable_components(
+            latex_content)
 
         if not changeable_components:
             logger.warning("No changeable components detected")
             return latex_content
 
-        # Smart keyword matching
-        keyword_assignments = self.smart_keyword_matching(
-            changeable_components, target_keywords)
-
-        # Optimize components based on assignments
+        # Distribute keywords while enforcing max 2 usage per keyword
         optimized_components = {}
         changes_made = 0
 
-        for component in changeable_components:
-            assigned_keywords = keyword_assignments.get(component.name, [])
-            new_keywords = [
-                kw for kw in assigned_keywords if kw not in component.existing_keywords]
+        for i, component in enumerate(changeable_components):
+            # Find keywords that still need placement (usage < 2)
+            available_keywords = [
+                kw for kw in keywords_to_add if keyword_usage_count.get(kw, 0) < 2]
 
-            if new_keywords:
-                optimized_content = self.optimize_component_strict(
-                    component, assigned_keywords)
+            if not available_keywords:
+                break  # All keywords used enough times
 
-                if optimized_content != component.original_content:
-                    optimized_components[component.name] = {
-                        'content': optimized_content,
-                        'start_line': component.start_line,
-                        'end_line': component.end_line,
-                        'keywords': assigned_keywords
-                    }
-                    changes_made += 1
+            # Assign 1-2 keywords, prioritizing least used
+            component_keywords = available_keywords[:2]
 
-                    logger.info(f"\n[CHANGE {changes_made}]")
-                    logger.info(f"Component: {component.name}")
-                    logger.info(f"Assigned keywords: {assigned_keywords}")
-                    logger.info(
-                        f"Words: {self.count_words_strict(component.original_content)} → {self.count_words_strict(optimized_content)}")
+            optimized_content = self.optimize_component_strict(
+                component, component_keywords)
+
+            if optimized_content != component.original_content:
+                # Update keyword usage count based on what was actually added
+                for keyword in component_keywords:
+                    if keyword.lower() in optimized_content.lower() and keyword.lower() not in component.original_content.lower():
+                        keyword_usage_count[keyword] = keyword_usage_count.get(
+                            keyword, 0) + 1
+                        logger.info(
+                            f"Keyword '{keyword}' now used {keyword_usage_count[keyword]} times")
+
+                optimized_components[component.name] = {
+                    'content': optimized_content,
+                    'start_line': component.start_line,
+                    'end_line': component.end_line,
+                    'keywords': component_keywords
+                }
+                changes_made += 1
+
+                logger.info(f"\n[CHANGE {changes_made}]")
+                logger.info(f"Component: {component.name}")
+                logger.info(f"Keywords: {component_keywords}")
+                logger.info(
+                    f"Words: {self.count_words_strict(component.original_content)} → {self.count_words_strict(optimized_content)}")
 
         # Reconstruct resume with optimized components
         if optimized_components:
@@ -528,10 +392,7 @@ Return ONLY the rewritten bullet.""")
         # Report final keyword usage
         final_usage = {}
         for keyword in target_keywords:
-            # Count clean keyword (without LaTeX escaping)
-            clean_keyword = keyword.replace('\\&', '&').replace(
-                '\\%', '%').replace('\\$', '$').replace('\\#', '#')
-            count = optimized_latex.lower().count(clean_keyword.lower())
+            count = optimized_latex.lower().count(keyword.lower())
             final_usage[keyword] = count
 
         logger.info(f"\n--- KEYWORD USAGE SUMMARY ---")
@@ -596,8 +457,8 @@ Return ONLY the rewritten bullet.""")
             logger.error(f"Error saving optimized resume: {e}")
             sys.exit(1)
 
-    def compile_pdf(self, latex_file, resume_name):
-        """Compile LaTeX to PDF with industry standard naming"""
+    def compile_pdf(self, latex_file):
+        """Compile LaTeX to PDF"""
         try:
             logger.info("Compiling PDF...")
             work_dir = os.path.dirname(latex_file) or '.'
@@ -621,25 +482,9 @@ Return ONLY the rewritten bullet.""")
                             break
                     return False
 
-            # Rename PDF to industry standard format
-            original_pdf = latex_file.replace('.tex', '.pdf')
-            standard_pdf = os.path.join(work_dir, f"Resume.pdf")
-
-            if os.path.exists(original_pdf):
-                if original_pdf != standard_pdf:
-                    os.rename(original_pdf, standard_pdf)
-
-                logger.info(
-                    f"✅ PDF compiled successfully: {os.path.abspath(standard_pdf)}")
-                logger.info(f"\n📄 RESUME READY!")
-                logger.info(f"PDF Location: {os.path.abspath(standard_pdf)}")
-                logger.info(f"\n🔧 To make further edits:")
-                logger.info(
-                    f"   1. Edit the optimized file: {os.path.abspath(latex_file)}")
-                logger.info(f"   2. Recompile with: pdflatex {tex_filename}")
-                logger.info(
-                    f"   3. Run from directory: {os.path.abspath(work_dir)}")
-
+            pdf_file = latex_file.replace('.tex', '.pdf')
+            if os.path.exists(pdf_file):
+                logger.info(f"PDF compiled successfully: {pdf_file}")
                 return True
             else:
                 logger.error("PDF file not found after compilation")
@@ -680,17 +525,6 @@ def main():
         print(f"Error: Input file not found: {args.input_file}")
         sys.exit(1)
 
-    # Initialize optimizer
-    optimizer = SimplifiedResumeOptimizer()
-
-    # Read files
-    logger.info(f"Reading resume: {args.resume}")
-    latex_content = optimizer.read_file(args.resume)
-
-    # Extract name for PDF naming
-    resume_name = optimizer.extract_name_from_resume(latex_content)
-    logger.info(f"Detected resume name: {resume_name}")
-
     # Set output path
     if args.output:
         output_path = args.output
@@ -700,6 +534,13 @@ def main():
         output_dir = f"optimized_resume_{timestamp}"
         os.makedirs(output_dir, exist_ok=True)
         output_path = os.path.join(output_dir, f"{base_name}_optimized.tex")
+
+    # Initialize optimizer
+    optimizer = SimplifiedResumeOptimizer()
+
+    # Read files
+    logger.info(f"Reading resume: {args.resume}")
+    latex_content = optimizer.read_file(args.resume)
 
     logger.info(f"Reading input: {args.input_file}")
     input_content = optimizer.read_file(args.input_file)
@@ -717,7 +558,7 @@ def main():
 
     # Compile PDF if requested
     if args.pdf and not args.no_pdf:
-        optimizer.compile_pdf(output_path, resume_name)
+        optimizer.compile_pdf(output_path)
 
     logger.info("Resume optimization completed!")
 

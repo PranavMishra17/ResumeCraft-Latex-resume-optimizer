@@ -180,3 +180,7 @@ results\
 *.fls
 *.gz
 *.pdf
+
+#configs
+config.py
+config_local.py
