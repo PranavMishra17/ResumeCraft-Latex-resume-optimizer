@@ -1,7 +1,18 @@
+import os
+import sys
 import requests
 import json
 import base64
 from pathlib import Path
+import logging
+
+
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s',
+    handlers=[logging.StreamHandler(sys.stdout)]
+)
+logger = logging.getLogger(__name__)
 
 
 class LaTeXConverter:
@@ -92,8 +103,11 @@ class LaTeXConverter:
                             with open(output_pdf_path, 'wb') as f:
                                 f.write(pdf_data)
 
-                            print(
-                                f"✅ PDF generated successfully: {output_pdf_path}")
+                            logger.info(
+                                f"✅ PDF compiled successfully: {os.path.abspath(output_pdf_path)}")
+                            logger.info(f"\n📄 RESUME READY!")
+                            logger.info(f"PDF Location: {os.path.abspath(output_pdf_path)}")
+
                             return str(output_pdf_path)
                         else:
                             print("❌ No PDF in response")
