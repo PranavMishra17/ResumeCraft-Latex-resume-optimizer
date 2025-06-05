@@ -18,6 +18,13 @@ from dataclasses import dataclass
 from typing import List, Dict, Set, Tuple
 import config
 
+# For tex to pdf conversion
+import requests
+import json
+import base64
+from pathlib import Path
+from tex_to_pdf import LaTeXConverter
+
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s',
@@ -717,7 +724,17 @@ def main():
 
     # Compile PDF if requested
     if args.pdf and not args.no_pdf:
-        optimizer.compile_pdf(output_path, resume_name)
+        converter = LaTeXConverter()
+        output = converter.tex_file_to_pdf(
+            tex_file_path=output_path,
+            output_pdf_path=os.path.join(os.path.dirname(
+                output_path), f"Resume.pdf"),
+            compiler='xelatex'
+        )
+        if output:
+            print(f"Successfully created: {output}\n")
+        else:
+            optimizer.compile_pdf(output_path, resume_name)
 
     logger.info("Resume optimization completed!")
 
