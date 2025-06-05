@@ -1,6 +1,6 @@
 # ResumeCraft 🎯
 
-*AI-powered LaTeX resume optimization with intelligent keyword integration*
+*AI-powered LaTeX resume optimization with intelligent keyword integration with pdf compilation*
 
 ## Overview
 
@@ -53,30 +53,66 @@ python resume_optimizer.py your_resume.tex job_description.txt --jd --strict
 5. **Constraint Optimization**: Rewrite with strict character count enforcement (±10 chars)
 6. **Cloud Compilation**: Generate PDF via web API without local LaTeX installation
 
-## API Configuration
+## 🔧 API Configuration
 
-### Azure OpenAI (Default)
+### Environment Setup
+
+Create a `.env` file in your project root:
+
 ```bash
-export AZURE_API_KEY="your-api-key"
-export AZURE_ENDPOINT="https://your-resource.openai.azure.com/"
+# Azure OpenAI (Default)
+AZURE_OPENAI_API_KEY=your-azure-api-key
+AZURE_ENDPOINT=https://your-resource.openai.azure.com/
+
+# OpenAI Alternative  
+OPENAI_API_KEY=your-openai-api-key
+
+# Claude Alternative
+ANTHROPIC_API_KEY=your-claude-api-key
 ```
 
-### OpenAI API Alternative
+### Provider Configuration
+
+Edit `config.py` to switch between providers:
+
+**Azure OpenAI (Default - Active)**
 ```python
-# In config.py
-class Config:
-    OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
-    MODEL = "gpt-4o"
-    TEMPERATURE = 0.2
-
-# Update client initialization
-from langchain_openai import ChatOpenAI
-self.client = ChatOpenAI(
-    api_key=self.config.OPENAI_API_KEY,
-    model=self.config.MODEL,
-    temperature=self.config.TEMPERATURE
-)
+# Currently active - no changes needed
+AZURE_API_KEY = os.getenv("AZURE_OPENAI_API_KEY", "enter_fallback_here")
+AZURE_ENDPOINT = os.getenv("AZURE_ENDPOINT", "enter_fallback_here")
 ```
+
+**OpenAI Alternative**
+```python
+# 1. Comment out Azure section with """..."""
+"""
+AZURE_API_KEY = os.getenv("AZURE_OPENAI_API_KEY", "")
+# ... rest of Azure config
+"""
+
+# 2. Uncomment OpenAI section
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
+OPENAI_MODEL = "gpt-4o"
+```
+
+**Claude Alternative**  
+```python
+# 1. Comment out current provider
+# 2. Uncomment Claude section
+ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY", "")
+CLAUDE_MODEL = "claude-3-sonnet-20240229"
+```
+
+### Fallback Setup
+
+For direct API key setup without environment variables, replace fallback values:
+
+```python
+AZURE_API_KEY = os.getenv("AZURE_OPENAI_API_KEY", "sk-your-actual-key-here")
+AZURE_ENDPOINT = os.getenv("AZURE_ENDPOINT", "https://your-resource.openai.azure.com/")
+```
+
+**Note:** Environment variables are recommended for security.
 
 ## Usage
 
