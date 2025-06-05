@@ -180,3 +180,6 @@ results\
 *.fls
 *.gz
 *.pdf
+
+
+optimized*

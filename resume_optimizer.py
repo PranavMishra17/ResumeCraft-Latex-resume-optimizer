@@ -741,3 +741,12 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+
+    """
+    python resume_optimizer.py ai_resume.tex keywords.txt --strict
+
+    python resume_optimizer.py ai_resume.tex keywords.txt --strict
+
+    """
+
