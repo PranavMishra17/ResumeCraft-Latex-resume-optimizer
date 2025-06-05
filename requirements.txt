@@ -3,3 +3,6 @@ pandoc
 langchain
 langchain-openai
 langchain-core
+requests
+json
+python-dotenv
