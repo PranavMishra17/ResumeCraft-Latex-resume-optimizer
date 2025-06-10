@@ -260,7 +260,7 @@ MIT License - see [LICENSE](./LICENSE)
 - 📧 **Email**: pmishr23@uic.edu
 - 🔗 **Portfolio**: [portfolio-pranav-mishra.vercel.app](https://portfolio-pranav-mishra.vercel.app)
 - 💼 **LinkedIn**: [linkedin.com/in/pranavgamedev](https://www.linkedin.com/in/pranavgamedev/)
-- 🐛 **Issues**: [GitHub Issues](https://github.com/yourusername/resumecraft/issues)
+- 🐛 **Issues**: [GitHub Issues](https://github.com/PranavMishra17/ResumeCraft-Latex-resume-optimizer/issues)
 
 ---
 
