@@ -704,7 +704,9 @@ def main():
 
     # Save optimized resume
     optimizer.save_optimized_resume(optimized_latex, output_path)
+    optimizer.compile_pdf(output_path, resume_name)
 
+    """
     # Compile PDF if requested
     if args.pdf and not args.no_pdf:
         converter = LaTeXConverter()
@@ -718,6 +720,8 @@ def main():
             print(f"Successfully created: {output}\n")
         else:
             optimizer.compile_pdf(output_path, resume_name)
+    """
+
 
     logger.info("Resume optimization completed!")
 

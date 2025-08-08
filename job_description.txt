@@ -1,69 +1,22 @@
-ML Engineer - NLP
-Palo Alto, CA · 1 day ago · Over 100 people clicked apply
-Responses managed off LinkedIn
+Description & Requirements
 
+Electronic Arts creates next-level entertainment experiences that inspire players and fans around the world. Here, everyone is part of the story. Part of a community that connects across the globe. A place where creativity thrives, new perspectives are invited, and ideas matter. A team where everyone makes play happen.
 
- $120K/yr - $140K/yr
-Matches your job preferences, minimum pay preference is 96000.
+Java Engineer
 
- Hybrid
-Matches your job preferences, workplace type is Hybrid.
+Electronic Arts is looking for students to join our world-class internship experience this fall!
 
- Full-time
-Matches your job preferences, job type is Full-time.
+Our teams build meaningful relationships with hundreds of millions of players around the world who love our games. We aim to be the best at meeting players where they are and supporting them throughout their journey with EA. Our teams develop the strategic vision of our products, run outstanding multi-channel campaigns, build global engagement across all touch points, develop global insights, and propel sales and global publishing. We understand the dynamic global landscape so we can bring relevant content, promotions, and help to players anywhere.
 
-Apply
+What You’ll Do
 
-Save
-Save ML Engineer - NLP at Avoma
-ML Engineer - NLP
-Avoma · Palo Alto, CA (Hybrid)
+You will enhance and add features to existing systems
+You will participate in daily stand-up meetings, work on technical projects and collaborate with other team members.
+You will help deliver a seamless cross-play experience, allowing players to connect and engage across multiple systems with ease.
+You will work with cutting-edge technologies and have the opportunity to shape the future of cross-play features 
 
-Apply
+Qualifications
 
-Save
-Save ML Engineer - NLP at Avoma
-Show more options
-Your AI-powered job assessment
-
-
-
-Am I a good fit?
-
-Tailor my resume
-
-How can I best position myself?
-
-About the job
-Our Mission
-
-Join Avoma and work on some of the most challenging NLP problems in our mission to make every meeting more productive. Our intelligent meeting assistant helps professionals get insights and automate common tasks required for any business meeting. We leverage the latest NLP techniques to summarize meeting notes and extract key topics and action items, so our users can spend more time getting things done.
-
-We are a venture-funded early-stage startup, have 1000+ paid B2B customers, and are growing consistently month over month.
-
-The Opportunity
-
-We are looking for a Deep Learning / NLP Engineer to improve and build our algorithms to extract key insights and topics from conversations.
-
-For our insights engine, you’ll need to apply SOTA NLP techniques to take on challenges like identifying different topics of interest and summarizing meeting transcripts to succinct notes.
-
-At Avoma You Will
-
-Improve Avoma’s Insights Engine
-Create new models to be used in the production
-Work with state-of-the-art LLMs to solve complex tasks
-Develop and improve Deep Learning models in Tensorflow
-Work with our engineering team to ship models to our customers
-Stay up to date on the latest state-of-the-art papers in NLP
-Work with large datasets of over a million documents
-
-Requirements
-
-Atleast 2+ Years of experience with Machine Learning & NLP in a production environment
-Experience developing and debugging in Python
-Experience working with GPT, Claude, Gemini, or other similar LLMs.
-Experience writing and shipping scalable, high-performant and clean code
-Experience training Deep Neural Networks
-Experience with Tensorflow, PyTorch, or similar frameworks
-Excellent in both spoken and written communication skills
-Curious, self-motivated, and loves challenging problems
+You are currently enrolled in a Bachelor’s Degree granting program
+You have experience with Java
+You are passionate about innovation

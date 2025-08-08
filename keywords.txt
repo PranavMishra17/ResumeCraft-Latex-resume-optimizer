@@ -1,16 +1,10 @@
-Postgres
-Redis
-JS
-Ruby
-Heroku
-Next.js
-Salesforce
-continuous integration
-TypeScript
-backend
-end-to-end
-product features
-fintech
-technical architecture
-full stack
-API
+Pytorch
+Python
+Java
+machine learning
+natural language processing
+Keras
+R
+mathematics
+data science
+prototypes
