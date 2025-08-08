@@ -1,10 +1,12 @@
 Pytorch
-Python
-Java
-machine learning
-natural language processing
-Keras
+OpenCV
 R
-mathematics
 data science
-prototypes
+SQL
+Saas
+cross-functionality
+GPU
+Next.js
+API
+C#
+HTML

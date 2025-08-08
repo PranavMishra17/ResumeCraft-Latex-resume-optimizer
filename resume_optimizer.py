@@ -103,6 +103,43 @@ class SimplifiedResumeOptimizer:
             escaped.append(escaped_keyword)
         return escaped
 
+    def count_keyword_occurrences(self, text: str, keyword: str) -> int:
+        """Count actual keyword occurrences, avoiding false positives"""
+        # Clean keyword for comparison (remove LaTeX escaping)
+        clean_keyword = keyword.replace('\\&', '&').replace('\\%', '%').replace('\\$', '$').replace('\\#', '#')
+        
+        # Handle special cases
+        if clean_keyword.lower() == 'r':
+            # For 'R', only count when it appears as a standalone word or in specific contexts
+            import re
+            # Count R in programming contexts, not in LaTeX commands
+            pattern = r'\b[Rr]\b(?!\s*[a-z])'  # R not followed by lowercase (to avoid LaTeX commands)
+            matches = re.findall(pattern, text)
+            # Additional context-based filtering
+            valid_matches = 0
+            for match in re.finditer(pattern, text):
+                context = text[max(0, match.start()-20):match.end()+20].lower()
+                # Count if it's in programming context
+                if any(prog_term in context for prog_term in ['programming', 'language', 'statistical', 'analysis', 'data']):
+                    valid_matches += 1
+            return valid_matches
+        
+        elif clean_keyword.lower() == 'c#':
+            # For C#, look for explicit mentions
+            import re
+            pattern = r'\b[Cc]#\b|\b[Cc]-?[Ss]harp\b'
+            return len(re.findall(pattern, text))
+        
+        elif len(clean_keyword) <= 2:
+            # For other short keywords, use word boundary matching
+            import re
+            pattern = r'\b' + re.escape(clean_keyword) + r'\b'
+            return len(re.findall(pattern, text, re.IGNORECASE))
+        
+        else:
+            # For longer keywords, use case-insensitive substring matching
+            return text.lower().count(clean_keyword.lower())
+
     def extract_keywords_from_jd(self, job_description):
         """Extract relevant keywords from job description"""
         system_prompt = """Extract 8-10 most important technical keywords from this job description. 
@@ -132,15 +169,12 @@ class SimplifiedResumeOptimizer:
         return self.escape_latex_keywords(keywords)
 
     def extract_existing_keywords_in_component(self, component_content: str, target_keywords: List[str]) -> List[str]:
-        """Extract keywords that already exist in a specific component"""
+        """Extract keywords that already exist in a specific component using sophisticated matching"""
         existing = []
-        content_lower = component_content.lower()
 
         for keyword in target_keywords:
-            # Remove LaTeX escaping for comparison
-            keyword_clean = keyword.replace('\\&', '&').replace(
-                '\\%', '%').replace('\\$', '$').replace('\\#', '#')
-            if keyword_clean.lower() in content_lower:
+            count = self.count_keyword_occurrences(component_content, keyword)
+            if count > 0:
                 existing.append(keyword)
 
         return existing
@@ -242,46 +276,66 @@ Return only the indices (numbers) of CHANGEABLE bullets, comma-separated."""
             return bullets  # Fallback to all bullets
 
     def smart_keyword_matching(self, components: List[ResumeSection], target_keywords: List[str]) -> Dict[str, List[str]]:
-        """Intelligently match keywords to components based on context and existing keywords"""
+        """ORIGINAL FLOW: Match keywords to components based on context and existing keyword tracking"""
 
-        # Track keyword usage across all components
+        # Step 1: Track existing keyword usage across all components (improved counting)
         keyword_usage = {kw: 0 for kw in target_keywords}
-        component_assignments = {comp.name: [] for comp in components}
+        component_assignments = {comp.name: list(comp.existing_keywords) for comp in components}
 
-        # First, account for existing keywords
+        # Count existing keywords properly
         for component in components:
             for existing_kw in component.existing_keywords:
                 if existing_kw in keyword_usage:
                     keyword_usage[existing_kw] += 1
-                    component_assignments[component.name].append(existing_kw)
 
-        # Get keywords that need placement (used < 2 times)
-        keywords_to_place = [kw for kw,
-                             count in keyword_usage.items() if count < 2]
+        # Step 2: Get keywords that need placement (used < 2 times)
+        keywords_to_place = [kw for kw, count in keyword_usage.items() if count < 2]
 
         if not keywords_to_place:
             logger.info("All keywords already at optimal usage")
             return component_assignments
 
-        # Use LLM to match remaining keywords to components
+        # Step 3: Use LLM to assign remaining keywords (ORIGINAL APPROACH)
         components_text = ""
         for idx, comp in enumerate(components):
             clean_content = re.sub(r'\\item\s*', '', comp.content).strip()
-            existing_kw_str = ", ".join(
-                comp.existing_keywords) if comp.existing_keywords else "none"
-            components_text += f"[{idx}] Existing keywords: {existing_kw_str}\nContent: {clean_content}\n\n"
+            existing_kw_str = ", ".join(comp.existing_keywords) if comp.existing_keywords else "none"
+            
+            # Simple context detection for LLM
+            context_hints = []
+            content_lower = clean_content.lower()
+            if any(term in content_lower for term in ['unity', 'game', 'quest', 'vr', 'c#']):
+                context_hints.append("Game/Unity")
+            if any(term in content_lower for term in ['web', 'react', 'node', 'html']):
+                context_hints.append("Web")
+            if any(term in content_lower for term in ['ml', 'pytorch', 'ai', 'model']):
+                context_hints.append("ML/AI")
+            if any(term in content_lower for term in ['vision', 'opencv', 'image']):
+                context_hints.append("Vision")
+            if any(term in content_lower for term in ['data', 'sql', 'analysis']):
+                context_hints.append("Data")
+                
+            context_str = ", ".join(context_hints) if context_hints else "General"
+            components_text += f"[{idx}] Context: {context_str} | Existing: {existing_kw_str}\nContent: {clean_content}\n\n"
 
         keywords_text = ", ".join(keywords_to_place)
 
-        system_prompt = f"""Match these technical keywords to the most appropriate resume components based on context and relevance.
+        system_prompt = f"""Match these technical keywords to the most appropriate resume components based on context.
 
 Keywords to place: {keywords_text}
 
 Rules:
 1. Each keyword can be used maximum 2 times total across all components
-2. Each component should get 1-2 new keywords maximum
+2. Each component should get 1-2 new keywords maximum  
 3. Match keywords based on technical relevance and context
 4. Consider existing keywords in each component
+
+Context matching guidelines:
+- Game/Unity contexts → C#, GPU
+- Web contexts → Next.js, HTML, API, SaaS
+- ML/AI contexts → PyTorch, GPU, OpenCV
+- Vision contexts → OpenCV, GPU, data science
+- Data contexts → R, SQL, data science
 
 Return the assignments in this exact format:
 [component_index]: keyword1, keyword2
@@ -297,20 +351,18 @@ Only return assignments for components that should get new keywords."""
         try:
             response = self.client.invoke(messages)
 
-            # Parse LLM response
+            # Parse LLM response (ORIGINAL PARSING LOGIC)
             for line in response.content.strip().split('\n'):
                 if ':' in line:
                     try:
                         comp_idx_str, keywords_str = line.split(':', 1)
-                        comp_idx = int(comp_idx_str.strip().replace(
-                            '[', '').replace(']', ''))
+                        comp_idx = int(comp_idx_str.strip().replace('[', '').replace(']', ''))
 
                         if 0 <= comp_idx < len(components):
                             component = components[comp_idx]
-                            new_keywords = [
-                                kw.strip() for kw in keywords_str.split(',') if kw.strip()]
+                            new_keywords = [kw.strip() for kw in keywords_str.split(',') if kw.strip()]
 
-                            # Validate assignments
+                            # Validate assignments (ORIGINAL VALIDATION)
                             valid_keywords = []
                             for kw in new_keywords:
                                 if kw in keywords_to_place and keyword_usage[kw] < 2:
@@ -318,8 +370,7 @@ Only return assignments for components that should get new keywords."""
                                     keyword_usage[kw] += 1
 
                             if valid_keywords:
-                                component_assignments[component.name].extend(
-                                    valid_keywords)
+                                component_assignments[component.name].extend(valid_keywords)
 
                     except (ValueError, IndexError):
                         continue
@@ -334,7 +385,6 @@ Only return assignments for components that should get new keywords."""
 
         except Exception as e:
             logger.error(f"Error in smart keyword matching: {e}")
-            # Fallback: simple distribution
             return self.fallback_keyword_distribution(components, keywords_to_place)
 
     def fallback_keyword_distribution(self, components: List[ResumeSection], keywords_to_place: List[str]) -> Dict[str, List[str]]:
@@ -370,60 +420,202 @@ Only return assignments for components that should get new keywords."""
                  and not w.isdigit()]
         return len(words)
 
-    def optimize_component_strict(self, component: ResumeSection, assigned_keywords: List[str]) -> str:
-        """Optimize component with upper word limit only"""
+    def count_characters_strict(self, text: str) -> int:
+        """Count characters excluding LaTeX commands for strict character limits"""
+        # Remove all LaTeX commands and their arguments
+        clean_text = re.sub(r'\\[a-zA-Z*]+(\[[^\]]*\])?(\{[^}]*\})*', '', text)
+        # Remove URLs
+        clean_text = re.sub(r'https?://[^\s}]+', '', clean_text)
+        # Remove excessive whitespace but keep single spaces
+        clean_text = re.sub(r'\s+', ' ', clean_text)
+        # Remove leading/trailing whitespace
+        clean_text = clean_text.strip()
+        return len(clean_text)
+
+    def get_domain_specific_prompt(self, context_indicators: List[str], new_keywords: List[str]) -> str:
+        """Generate domain-specific prompts for better keyword integration"""
+        
+        # Determine primary domain
+        domain = "Software"  # Default
+        if any("Game Development" in ctx for ctx in context_indicators):
+            domain = "Game Development"
+        elif any("Web Development" in ctx for ctx in context_indicators):
+            domain = "Web Development"
+        elif any("Machine Learning" in ctx or "Computer Vision" in ctx for ctx in context_indicators):
+            domain = "ML/AI"
+        
+        domain_prompts = {
+            "Game Development": f"""You are a game development expert. Integrate these technical keywords into the resume bullet:
+
+KEYWORDS: {', '.join(new_keywords)}
+
+GAME DEV INTEGRATION RULES:
+- C# goes with Unity engine work
+- GPU mentions for performance optimization
+- Use gaming-specific terminology
+- Emphasize engine capabilities and optimization
+
+EXAMPLES:
+- "developed game" → "developed C# game using Unity"
+- "optimized code" → "optimized C# code for GPU performance"
+- "built system" → "built game system in Unity"
+
+Keep it technical and game-focused.""",
+
+            "Web Development": f"""You are a web development expert. Integrate these technical keywords into the resume bullet:
+
+KEYWORDS: {', '.join(new_keywords)}
+
+WEB DEV INTEGRATION RULES:
+- Next.js for React-based projects
+- HTML for frontend work
+- API for backend/integration work
+- SaaS for platform development
+
+EXAMPLES:
+- "built website" → "built responsive website using Next.js"
+- "created platform" → "created SaaS platform with REST APIs"
+- "developed frontend" → "developed frontend using HTML and Next.js"
+
+Focus on modern web technologies.""",
+
+            "ML/AI": f"""You are a machine learning expert. Integrate these technical keywords into the resume bullet:
+
+KEYWORDS: {', '.join(new_keywords)}
+
+ML/AI INTEGRATION RULES:
+- PyTorch for deep learning models
+- GPU for training acceleration
+- OpenCV for computer vision
+- Data science for analytics
+
+EXAMPLES:
+- "built model" → "built PyTorch model with GPU acceleration"
+- "processed images" → "processed images using OpenCV"
+- "analyzed data" → "analyzed data using data science techniques"
+
+Emphasize technical ML capabilities.""",
+
+            "Software": f"""You are a software engineering expert. Integrate these technical keywords into the resume bullet:
+
+KEYWORDS: {', '.join(new_keywords)}
+
+SOFTWARE INTEGRATION RULES:
+- Focus on technical accuracy
+- Use industry-standard terminology
+- Emphasize scalability and performance
+- Match keywords to actual technical context
+
+EXAMPLES:
+- "built system" → "built distributed system"
+- "optimized code" → "optimized algorithm performance"
+- "developed application" → "developed scalable application"
+
+Keep it technically precise."""
+        }
+        
+        return domain_prompts.get(domain, domain_prompts["Software"])
+
+    def optimize_component_strict(self, component: ResumeSection, assigned_keywords: List[str], strict_mode: bool = False) -> str:
+        """ORIGINAL APPROACH: Optimize single component with assigned keywords, preserving original meaning"""
         if not assigned_keywords:
             return component.original_content
 
-        original_word_count = self.count_words_strict(
-            component.original_content)
-        max_words = original_word_count + 4  # Only upper limit
-
+        original_word_count = self.count_words_strict(component.original_content)
+        original_char_count = self.count_characters_strict(component.original_content)
+        
+        # Set limits based on strict mode (improved limits)
+        if strict_mode:
+            max_chars = original_char_count + 8  # More lenient than +2 for first attempt
+            max_words = original_word_count + 4
+        else:
+            max_chars = original_char_count + 20
+            max_words = original_word_count + 6
+        
         # Remove duplicates while preserving order
         keywords = list(dict.fromkeys(assigned_keywords))
+        new_keywords = [kw for kw in keywords if kw not in component.existing_keywords]
 
-        system_prompt = f"""Rewrite this resume bullet to include these keywords: {', '.join(keywords)}
+        if not new_keywords:
+            return component.original_content
 
-STRICT RULES:
-1. Maximum word count: {max_words} words (original: {original_word_count})
-2. Keep ALL LaTeX commands exactly (\\textbf, \\href, \\item, etc.)
-3. Preserve existing keywords that are already present
-4. Replace generic terms with new keywords where appropriate
-5. Maintain technical accuracy
+        # ORIGINAL SIMPLE PROMPT - focused on meaning preservation
+        system_prompt = f"""Rewrite this resume bullet to naturally include these keywords: {', '.join(new_keywords)}
 
-EXAMPLES:
-- "developed system" → "developed distributed system"
-- "implemented framework" → "implemented robotics framework" 
-- "optimized performance" → "optimized CPU performance"
+CRITICAL RULES:
+1. PRESERVE the original meaning and achievements
+2. Replace generic terms with specific keywords where appropriate
+3. Keep ALL LaTeX commands exactly (\\textbf, \\href, \\item, etc.)
+4. Maximum {max_chars} characters (original: {original_char_count})
+5. Maximum {max_words} words (original: {original_word_count})
 
-Word count limit is CRITICAL. Do not exceed {max_words} words."""
+INTEGRATION EXAMPLES:
+- "built system" → "built distributed system" 
+- "used framework" → "used PyTorch framework"
+- "optimized performance" → "optimized GPU performance"
+- "developed application" → "developed C# application"
+
+Return ONLY the rewritten bullet point."""
 
         messages = [
             SystemMessage(content=system_prompt),
-            HumanMessage(content=f"""Original bullet ({original_word_count} words):
+            HumanMessage(content=f"""Original bullet ({original_word_count} words, {original_char_count} chars):
 {component.original_content}
 
-Keywords to integrate: {', '.join(keywords)}
-
-Maximum word count: {max_words} words
-Return ONLY the rewritten bullet.""")
+Keywords to integrate: {', '.join(new_keywords)}
+Character limit: {max_chars}
+Word limit: {max_words}""")
         ]
 
+        # First attempt
         try:
             response = self.client.invoke(messages)
             optimized = response.content.strip()
 
-            # Clean markdown
+            # Clean markdown artifacts
             optimized = re.sub(r'```latex\s*', '', optimized)
             optimized = re.sub(r'```\s*', '', optimized)
+            optimized = optimized.strip()
 
-            # Word count validation (upper limit only)
             new_word_count = self.count_words_strict(optimized)
+            new_char_count = self.count_characters_strict(optimized)
 
+            # Check limits
+            if strict_mode and new_char_count > max_chars:
+                logger.warning(f"Character limit exceeded: {new_char_count} > {max_chars}. Trying fallback...")
+                
+                # SECOND ATTEMPT - more concise prompt
+                fallback_prompt = f"""Make this more concise while keeping keywords: {', '.join(new_keywords)}
+
+Original: {component.original_content}
+Previous attempt: {optimized}
+
+STRICT character limit: {original_char_count + 2} characters."""
+                
+                fallback_messages = [
+                    SystemMessage(content="You are a concise technical writer."),
+                    HumanMessage(content=fallback_prompt)
+                ]
+                
+                try:
+                    fallback_response = self.client.invoke(fallback_messages)
+                    optimized = fallback_response.content.strip()
+                    optimized = re.sub(r'```.*', '', optimized).strip()
+                    
+                    new_char_count = self.count_characters_strict(optimized)
+                    if strict_mode and new_char_count > original_char_count + 2:
+                        logger.error(f"Fallback exceeded strict limit: {new_char_count} > {original_char_count + 2}")
+                        return component.original_content
+                        
+                except Exception as e:
+                    logger.error(f"Fallback optimization failed: {e}")
+                    return component.original_content
+
+            # Word count check
             if new_word_count > max_words:
-                logger.warning(
-                    f"Word count exceeded: {new_word_count} > {max_words}")
-                return component.original_content
+                logger.warning(f"Word count exceeded: {new_word_count} > {max_words}")
+                if strict_mode:
+                    return component.original_content
 
             # Basic structure validation
             if not self.validate_structure_basic(component.original_content, optimized):
@@ -485,8 +677,9 @@ Return ONLY the rewritten bullet.""")
                 kw for kw in assigned_keywords if kw not in component.existing_keywords]
 
             if new_keywords:
+                # ORIGINAL: Simple one-by-one optimization
                 optimized_content = self.optimize_component_strict(
-                    component, assigned_keywords)
+                    component, assigned_keywords, strict_mode=strict)
 
                 if optimized_content != component.original_content:
                     optimized_components[component.name] = {
@@ -497,11 +690,16 @@ Return ONLY the rewritten bullet.""")
                     }
                     changes_made += 1
 
+                    orig_chars = self.count_characters_strict(component.original_content)
+                    new_chars = self.count_characters_strict(optimized_content)
+                    orig_words = self.count_words_strict(component.original_content)
+                    new_words = self.count_words_strict(optimized_content)
+
                     logger.info(f"\n[CHANGE {changes_made}]")
                     logger.info(f"Component: {component.name}")
                     logger.info(f"Assigned keywords: {assigned_keywords}")
-                    logger.info(
-                        f"Words: {self.count_words_strict(component.original_content)} → {self.count_words_strict(optimized_content)}")
+                    logger.info(f"Characters: {orig_chars} → {new_chars} (diff: +{new_chars - orig_chars})")
+                    logger.info(f"Words: {orig_words} → {new_words}")
 
         # Reconstruct resume with optimized components
         if optimized_components:
@@ -515,13 +713,10 @@ Return ONLY the rewritten bullet.""")
             logger.error("Full resume validation failed!")
             return latex_content
 
-        # Report final keyword usage
+        # Report final keyword usage with sophisticated counting
         final_usage = {}
         for keyword in target_keywords:
-            # Count clean keyword (without LaTeX escaping)
-            clean_keyword = keyword.replace('\\&', '&').replace(
-                '\\%', '%').replace('\\$', '$').replace('\\#', '#')
-            count = optimized_latex.lower().count(clean_keyword.lower())
+            count = self.count_keyword_occurrences(optimized_latex, keyword)
             final_usage[keyword] = count
 
         logger.info(f"\n--- KEYWORD USAGE SUMMARY ---")
