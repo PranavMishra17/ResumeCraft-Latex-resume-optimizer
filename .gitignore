@@ -184,3 +184,6 @@ results\
 
 optimized*
 /resumecraft-webapp
+/pdfs
+run_output.txt
+run_output_utf8.txt

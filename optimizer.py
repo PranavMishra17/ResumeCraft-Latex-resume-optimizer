@@ -470,20 +470,30 @@ STRICT character limit: {original_char_count + 2} characters."""
 
         # Report final keyword usage
         final_usage = {}
+        initial_usage = {}
         for keyword in target_keywords:
-            count = count_keyword_occurrences(optimized_latex, keyword)
-            final_usage[keyword] = count
+            initial_count = count_keyword_occurrences(latex_content, keyword)
+            final_count = count_keyword_occurrences(optimized_latex, keyword)
+            initial_usage[keyword] = initial_count
+            final_usage[keyword] = final_count
 
-        logger.info(f"\n--- KEYWORD USAGE SUMMARY ---")
-        for keyword, count in final_usage.items():
-            logger.info(f"'{keyword}': {count} times")
+        logger.info(f"\n--- KEYWORD COVERAGE SUMMARY ---")
+        logger.info(f"{'KEYWORD':<25} | {'BEFORE':<10} | {'AFTER':<10}")
+        logger.info("-" * 52)
+        for keyword in target_keywords:
+            init_status = "Present" if initial_usage[keyword] > 0 else "Missing"
+            final_status = "Present" if final_usage[keyword] > 0 else "Missing"
+            logger.info(f"{keyword:<25} | {init_status:<10} | {final_status:<10} (Count: {initial_usage[keyword]} -> {final_usage[keyword]})")
 
-        total_used = sum(1 for count in final_usage.values() if count > 0)
-        coverage = (total_used / len(target_keywords)) * 100 if target_keywords else 0
+        initial_used = sum(1 for count in initial_usage.values() if count > 0)
+        final_used = sum(1 for count in final_usage.values() if count > 0)
+        initial_coverage = (initial_used / len(target_keywords)) * 100 if target_keywords else 0
+        final_coverage = (final_used / len(target_keywords)) * 100 if target_keywords else 0
 
         logger.info(f"\n--- OPTIMIZATION SUMMARY ---")
         logger.info(f"Components modified: {changes_made}")
-        logger.info(f"Keywords used: {total_used}/{len(target_keywords)} ({coverage:.1f}%)")
+        logger.info(f"Initial coverage: {initial_used}/{len(target_keywords)} keywords ({initial_coverage:.1f}%)")
+        logger.info(f"Final coverage:   {final_used}/{len(target_keywords)} keywords ({final_coverage:.1f}%)")
 
         return optimized_latex
 
