@@ -1,14 +1,20 @@
-# ResumeCraft 🎯
+<div align="center">
+  <img src="https://github.com/PranavMishra17/ResumeCraft-Latex-resume-optimizer/blob/c5eb36a9bb31ac2a28450fd9faf8770bad4118ed/resume.png" alt="ResumeCraft Banner" width="800"/>
 
-*AI-powered LaTeX resume optimization with intelligent keyword integration with pdf compilation*
+  <h1>ResumeCraft 🎯</h1>
+
+  <p>
+    <em>AI-powered LaTeX resume optimization with intelligent keyword integration and PDF compilation</em>
+  </p>
+</div>
+
+---
 
 ## Overview
 
 ResumeCraft uses LLM-powered analysis to intelligently optimize LaTeX resumes for ATS systems. Unlike simple keyword stuffing, it identifies changeable resume components, enforces strict character limits, and tracks keyword usage to maintain natural content flow.
 
 > **For Recruiters:** This tool demonstrates semantic analysis, LaTeX AST manipulation, constraint solving, and real-time validation—probably more engineering skill than any keyword could convey. 😉
-
-![Screenshot](https://github.com/PranavMishra17/ResumeCraft-Latex-resume-optimizer/blob/c5eb36a9bb31ac2a28450fd9faf8770bad4118ed/resume.png)
 
 ## Key Features
 
@@ -33,8 +39,8 @@ source venv/bin/activate  # Windows: venv\Scripts\activate
 pip install -r requirements.txt
 
 # Run optimization
-python resume_optimizer.py your_resume.tex keywords.txt
-python resume_optimizer.py your_resume.tex job_description.txt --jd --strict
+python main.py your_resume.tex keywords.txt
+python main.py your_resume.tex job_description.txt --jd --strict
 ```
 
 ## Technical Architecture
@@ -44,6 +50,7 @@ python resume_optimizer.py your_resume.tex job_description.txt --jd --strict
 - **Keyword Usage Tracking**: Enforces maximum 2 occurrences per keyword to prevent spam
 - **Strict Character Limits**: ±10 character constraint maintains resume formatting
 - **Cloud PDF Generation**: Web-based LaTeX compilation eliminates local setup
+- **Modular & Multi-Provider**: Support for Azure, OpenAI, Gemini, and Claude LLMs out of the box with a cleanly separated architecture.
 
 ### Optimization Flow
 1. **Keyword Extraction**: Extract relevant keywords from job descriptions using LLM analysis
@@ -51,81 +58,53 @@ python resume_optimizer.py your_resume.tex job_description.txt --jd --strict
 3. **Component Detection**: LLM identifies changeable components (project descriptions, technical work)
 4. **Smart Distribution**: Assign 1-2 keywords per component, prioritizing least-used keywords
 5. **Constraint Optimization**: Rewrite with strict character count enforcement (±10 chars)
-6. **Cloud Compilation**: Generate PDF via web API without local LaTeX installation
+6. **Result Overwrite**: Generates a single `optimized_resume.tex` file in the root for easy manual edits.
+7. **Cloud Compilation**: Generate PDF via local or web API isolation in `pdfs/<timestamp>/Resume.pdf`.
 
 ## 🔧 API Configuration
 
 ### Environment Setup
 
-Create a `.env` file in your project root:
+Create a `.env` file in your project root and set your preferred provider.
 
-```bash
+```env
+# Choose your active provider: azure, openai, gemini, or anthropic
+LLM_PROVIDER=azure
+TEMPERATURE=0.8
+
 # Azure OpenAI (Default)
-AZURE_OPENAI_API_KEY=your-azure-api-key
+AZURE_DEPLOYMENT=gpt-4o-Krantiji
+AZURE_API_KEY=your-azure-api-key
+AZURE_API_VERSION=2024-12-01-preview
 AZURE_ENDPOINT=https://your-resource.openai.azure.com/
 
 # OpenAI Alternative  
 OPENAI_API_KEY=your-openai-api-key
+OPENAI_MODEL=gpt-4o
 
-# Claude Alternative
+# Google Gemini Alternative
+GEMINI_API_KEY=your-gemini-api-key
+GEMINI_MODEL=gemini-1.5-pro
+
+# Anthropic Claude Alternative
 ANTHROPIC_API_KEY=your-claude-api-key
+ANTHROPIC_MODEL=claude-3-5-sonnet-20240620
 ```
 
-### Provider Configuration
-
-Edit `config.py` to switch between providers:
-
-**Azure OpenAI (Default - Active)**
-```python
-# Currently active - no changes needed
-AZURE_API_KEY = os.getenv("AZURE_OPENAI_API_KEY", "enter_fallback_here")
-AZURE_ENDPOINT = os.getenv("AZURE_ENDPOINT", "enter_fallback_here")
-```
-
-**OpenAI Alternative**
-```python
-# 1. Comment out Azure section with """..."""
-"""
-AZURE_API_KEY = os.getenv("AZURE_OPENAI_API_KEY", "")
-# ... rest of Azure config
-"""
-
-# 2. Uncomment OpenAI section
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
-OPENAI_MODEL = "gpt-4o"
-```
-
-**Claude Alternative**  
-```python
-# 1. Comment out current provider
-# 2. Uncomment Claude section
-ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY", "")
-CLAUDE_MODEL = "claude-3-sonnet-20240229"
-```
-
-### Fallback Setup
-
-For direct API key setup without environment variables, replace fallback values:
-
-```python
-AZURE_API_KEY = os.getenv("AZURE_OPENAI_API_KEY", "sk-your-actual-key-here")
-AZURE_ENDPOINT = os.getenv("AZURE_ENDPOINT", "https://your-resource.openai.azure.com/")
-```
-
-**Note:** Environment variables are recommended for security.
+ResumeCraft dynamically imports the correct LangChain library based on `LLM_PROVIDER`. Ensure you have installed the respective package (`langchain-openai`, `langchain-google-genai`, or `langchain-anthropic`).
 
 ## Usage
 
 ### Basic Optimization
 ```bash
 # From job description
-python resume_optimizer.py resume.tex job_description.txt --jd
+python main.py resume.tex job_description.txt --jd
 
 # From keyword list
-python resume_optimizer.py resume.tex keywords.txt
+python main.py resume.tex keywords.txt
 
 # Strict mode with retry logic
-python resume_optimizer.py resume.tex job_description.txt --jd --strict
+python main.py resume.tex job_description.txt --jd --strict
 ```
 
 ### Input Formats
@@ -155,14 +134,14 @@ AWS
 Docker
 ```
 
-## PDF Compilation
+## Workflow & PDF Compilation
 
-ResumeCraft automatically compiles your optimized LaTeX to PDF using cloud-based compilation:
+ResumeCraft adopts a standardized output workflow:
+1. **Single TeX Output**: The optimized resume is always saved to `optimized_resume.tex` in the root folder. You can safely open and manually edit this single file knowing it represents your latest optimization. The original TeX file remains untouched.
+2. **Isolated PDF Folders**: On each successful run, a timestamped folder is created inside the `pdfs/` directory (e.g. `pdfs/YYYYMMDD_HHMMSS/Resume.pdf`). This keeps your root folder clean while letting you track PDF history over time.
 
-- **No Local Setup**: No LaTeX installation required
-- **Multiple Compilers**: Supports pdflatex, xelatex, lualatex
-- **Automatic Fallback**: Falls back to local compilation if available
-- **Standard Naming**: Outputs as `Resume.pdf`
+- **No Local Setup**: No LaTeX installation required. Falls back to LaTeX-on-HTTP API if local compilation fails.
+- **Multiple Compilers**: Supports pdflatex out of the box.
 
 ### Overleaf Fallback
 If compilation fails:
@@ -192,19 +171,17 @@ If compilation fails:
 ## Command Reference
 
 ```bash
-python resume_optimizer.py [-h] [-o OUTPUT] [--jd] [--pdf] [--no-pdf] [--strict] resume input_file
+python main.py [-h] [--jd] [--no-pdf] [--strict] resume input_file
 
 positional arguments:
-  resume                LaTeX resume file (.tex)
-  input_file           Keywords or job description file (.txt)
+  resume                Path to original LaTeX resume file (.tex)
+  input_file           Path to keywords or job description file (.txt)
 
 options:
   -h, --help           Show help message
-  -o OUTPUT            Output file path (default: timestamped folder)
   --jd                 Input contains job description (extract keywords)
-  --pdf                Compile to PDF (default: True)
-  --no-pdf            Skip PDF compilation
-  --strict             Enable retry logic for character limits
+  --no-pdf            Skip PDF compilation entirely
+  --strict             Enable strict mode for word/char limits
 ```
 
 ## Troubleshooting
@@ -236,7 +213,6 @@ options:
 ```bash
 git checkout -b feature/enhancement
 pytest tests/ -v
-black resume_optimizer.py --check
 git commit -m 'Add enhancement'
 ```
 
@@ -255,13 +231,28 @@ git commit -m 'Add enhancement'
 
 MIT License - see [LICENSE](./LICENSE)
 
-## Support
+---
 
-- 📧 **Email**: pmishr23@uic.edu
-- 🔗 **Portfolio**: [portfolio-pranav-mishra.vercel.app](https://portfolio-pranav-mishra.vercel.app)
-- 💼 **LinkedIn**: [linkedin.com/in/pranavgamedev](https://www.linkedin.com/in/pranavgamedev/)
-- 🐛 **Issues**: [GitHub Issues](https://github.com/PranavMishra17/ResumeCraft-Latex-resume-optimizer/issues)
+## Connect with me
 
+<table align="center">
+<tr>
+<td width="200px">
+  <img src="me.jpg" alt="Pranav Mishra" width="180" style="border: 5px solid; border-image: linear-gradient(45deg, #9d4edd, #ff006e) 1;">
+</td>
+<td>
+  
+[![Portfolio](https://img.shields.io/badge/-Portfolio-000?style=for-the-badge&logo=vercel&logoColor=white)](https://portfolio-pranav-mishra-paranoid.vercel.app)
+[![LinkedIn](https://img.shields.io/badge/-LinkedIn-0A66C2?style=for-the-badge&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/pranavgamedev/)
+[![Resume](https://img.shields.io/badge/-Resume-4B0082?style=for-the-badge&logo=read-the-docs&logoColor=white)](https://portfolio-pranav-mishra-paranoid.vercel.app/resume)
+[![YouTube](https://img.shields.io/badge/-YouTube-8B0000?style=for-the-badge&logo=youtube&logoColor=white)](https://www.youtube.com/@parano1dgames/featured)
+[![Hugging Face](https://img.shields.io/badge/-Hugging%20Face-FFD21E?style=for-the-badge&logo=huggingface&logoColor=black)](https://huggingface.co/Paranoiid)
+
+</td>
+</tr>
+</table>
+
+<div align="center">
 ---
 
 *Happy job hunting!*

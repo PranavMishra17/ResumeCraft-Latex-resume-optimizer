@@ -1,12 +1,9 @@
-Pytorch
-OpenCV
-R
-data science
-SQL
-Saas
-cross-functionality
-GPU
-Next.js
+Kubernetes
+Docker
+React
+containerization
+database
+frontend
+full-stack
+GraphQL
 API
-C#
-HTML

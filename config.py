@@ -10,79 +10,41 @@ logger = logging.getLogger(__name__)
 class Config:
     """Configuration for LLM providers"""
     
-    # Azure OpenAI Configuration (Default)
-    AZURE_DEPLOYMENT = "VARELab-GPT4o"
-    AZURE_API_KEY = os.getenv("AZURE_OPENAI_API_KEY", "enter_fallback_here") # Either setup the environment variable or provide a fallback
-    AZURE_API_VERSION = "2024-08-01-preview"
-    AZURE_ENDPOINT = os.getenv("AZURE_ENDPOINT", "enter_fallback_here") # Either setup the environment variable or provide a fallback
-    TEMPERATURE = 0.2
+    # Active Provider (can be azure, openai, gemini, anthropic)
+    ACTIVE_PROVIDER = os.getenv("LLM_PROVIDER", "azure").lower()
     
-    """OpenAI Configuration
-    OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
-    OPENAI_MODEL = "gpt-4o"
-    TEMPERATURE = 0.2
-    """
-    
-    """Claude Configuration  
-    ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY", "")
-    CLAUDE_MODEL = "claude-3-sonnet-20240229"
-    TEMPERATURE = 0.2
-    """
+    # Common Settings
+    TEMPERATURE = float(os.getenv("TEMPERATURE", "0.8"))
 
-def get_llm_client():
-    """Initialize and return LLM client based on configuration"""
+    # Azure OpenAI Configuration
+    AZURE_DEPLOYMENT = os.getenv("AZURE_DEPLOYMENT", "gpt-4o-mini")
+    AZURE_API_KEY = os.getenv("AZURE_API_KEY", "")
+    AZURE_API_VERSION = os.getenv("AZURE_API_VERSION", "2024-12-01-preview")
+    AZURE_ENDPOINT = os.getenv("AZURE_ENDPOINT", "")
     
-    # Azure OpenAI (Default)
-    if Config.AZURE_API_KEY and Config.AZURE_ENDPOINT:
-        try:
-            from langchain_openai import AzureChatOpenAI
-            client = AzureChatOpenAI(
-                azure_deployment=Config.AZURE_DEPLOYMENT,
-                api_key=Config.AZURE_API_KEY,
-                api_version=Config.AZURE_API_VERSION,
-                azure_endpoint=Config.AZURE_ENDPOINT,
-                temperature=Config.TEMPERATURE
-            )
-            logger.info("Azure OpenAI client initialized successfully!")
-            return client
-        except Exception as e:
-            logger.error(f"Error initializing Azure OpenAI client: {e}")
+    # OpenAI Configuration
+    OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
+    OPENAI_MODEL = os.getenv("OPENAI_MODEL", "gpt-4o")
+    
+    # Google Gemini Configuration
+    GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
+    GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-1.5-pro")
+    
+    # Anthropic Default Configuration
+    ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY", "")
+    ANTHROPIC_MODEL = os.getenv("ANTHROPIC_MODEL", "claude-3-5-sonnet-20240620")
+
+    @classmethod
+    def validate(cls):
+        if cls.ACTIVE_PROVIDER == "azure" and not cls.AZURE_API_KEY:
+            logger.error("AZURE_API_KEY must be set in environment variables when provider is azure.")
             sys.exit(1)
-    
-    """OpenAI Alternative
-    elif Config.OPENAI_API_KEY:
-        try:
-            from langchain_openai import ChatOpenAI
-            client = ChatOpenAI(
-                api_key=Config.OPENAI_API_KEY,
-                model=Config.OPENAI_MODEL,
-                temperature=Config.TEMPERATURE
-            )
-            logger.info("OpenAI client initialized successfully!")
-            return client
-        except Exception as e:
-            logger.error(f"Error initializing OpenAI client: {e}")
+        elif cls.ACTIVE_PROVIDER == "openai" and not cls.OPENAI_API_KEY:
+            logger.error("OPENAI_API_KEY must be set when provider is openai.")
             sys.exit(1)
-    """
-    
-    """Claude Alternative
-    elif Config.ANTHROPIC_API_KEY:
-        try:
-            from langchain_anthropic import ChatAnthropic
-            client = ChatAnthropic(
-                api_key=Config.ANTHROPIC_API_KEY,
-                model=Config.CLAUDE_MODEL,
-                temperature=Config.TEMPERATURE
-            )
-            logger.info("Claude client initialized successfully!")
-            return client
-        except Exception as e:
-            logger.error(f"Error initializing Claude client: {e}")
+        elif cls.ACTIVE_PROVIDER == "gemini" and not cls.GEMINI_API_KEY:
+            logger.error("GEMINI_API_KEY must be set when provider is gemini.")
             sys.exit(1)
-    """
-    
-    logger.error("No valid API keys found. Please set one of:")
-    logger.error("- AZURE_OPENAI_API_KEY and AZURE_ENDPOINT")
-    logger.error("- OPENAI_API_KEY") 
-    logger.error("- ANTHROPIC_API_KEY")
-    sys.exit(1)
+        elif cls.ACTIVE_PROVIDER == "anthropic" and not cls.ANTHROPIC_API_KEY:
+            logger.error("ANTHROPIC_API_KEY must be set when provider is anthropic.")
+            sys.exit(1)
