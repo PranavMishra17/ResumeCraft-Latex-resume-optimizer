@@ -1,8 +1,9 @@
-weasyprint
-pandoc
 langchain
 langchain-openai
 langchain-core
 requests
-json
 python-dotenv
+
+# Optional: Other LLM Providers
+# langchain-google-genai
+# langchain-anthropic
