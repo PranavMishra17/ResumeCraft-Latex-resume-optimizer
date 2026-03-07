@@ -131,8 +131,8 @@ def validate_full_resume(original: str, optimized: str, logger=None) -> bool:
         logger = logging.getLogger(__name__)
         
     # Check item count
-    orig_items = len(re.findall(r'\\item\s', original))
-    opt_items = len(re.findall(r'\\item\s', optimized))
+    orig_items = len(re.findall(r'\\item(?![a-zA-Z])', original))
+    opt_items = len(re.findall(r'\\item(?![a-zA-Z])', optimized))
 
     if orig_items != opt_items:
         logger.error(f"Item count mismatch: {orig_items} vs {opt_items}")

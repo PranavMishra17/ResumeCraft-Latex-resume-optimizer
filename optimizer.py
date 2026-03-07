@@ -463,11 +463,6 @@ STRICT character limit: {original_char_count + 2} characters."""
         else:
             optimized_latex = latex_content
 
-        # Final validation
-        if not validate_full_resume(latex_content, optimized_latex, logger):
-            logger.error("Full resume validation failed!")
-            return latex_content
-
         # Report final keyword usage
         final_usage = {}
         initial_usage = {}
@@ -494,6 +489,11 @@ STRICT character limit: {original_char_count + 2} characters."""
         logger.info(f"Components modified: {changes_made}")
         logger.info(f"Initial coverage: {initial_used}/{len(target_keywords)} keywords ({initial_coverage:.1f}%)")
         logger.info(f"Final coverage:   {final_used}/{len(target_keywords)} keywords ({final_coverage:.1f}%)")
+
+        # Final validation
+        if not validate_full_resume(latex_content, optimized_latex, logger):
+            logger.error("Full resume validation failed! Reverting to original resume.")
+            return latex_content
 
         return optimized_latex
 

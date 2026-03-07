@@ -140,3 +140,32 @@ class PDFCompiler:
         except Exception as e:
             logger.error(f"❌ API Request error: {e}")
             return False
+
+if __name__ == "__main__":
+    import sys
+    import argparse
+    import logging
+
+    logging.basicConfig(
+        level=logging.INFO,
+        format='%(asctime)s - %(levelname)s - %(message)s',
+        handlers=[logging.StreamHandler(sys.stdout)]
+    )
+
+    parser = argparse.ArgumentParser(description="ResumeCraft PDF Compiler")
+    parser.add_argument("tex_file", help="Path to the LaTeX file to compile (.tex)")
+    args = parser.parse_args()
+
+    tex_path = os.path.abspath(args.tex_file)
+    output_directory = os.path.dirname(tex_path) or '.'
+
+    compiler = PDFCompiler()
+    success = compiler.compile_pdf(
+        latex_file=tex_path,
+        output_dir=output_directory,
+        compiler="pdflatex",
+        use_fallback=True
+    )
+
+    if not success:
+        sys.exit(1)

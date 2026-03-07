@@ -1,9 +1,16 @@
-Kubernetes
-Docker
-React
-containerization
-database
-frontend
-full-stack
-GraphQL
-API
+Tableau
+Azure
+Power BI
+Python
+R
+SQL
+Big Data technologies
+mathematics
+computer vision
+data science
+data visualization
+machine learning
+natural language processing
+compliance
+cloud computing
+statistics

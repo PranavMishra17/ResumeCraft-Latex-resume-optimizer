@@ -39,8 +39,11 @@ source venv/bin/activate  # Windows: venv\Scripts\activate
 pip install -r requirements.txt
 
 # Run optimization
-python main.py your_resume.tex keywords.txt
-python main.py your_resume.tex job_description.txt --jd --strict
+python main.py resume.tex keywords.txt
+python main.py resume.tex job_description.txt --jd --strict
+
+# Recompile optimized resume
+python pdf_compiler.py optimized_resume.tex
 ```
 
 ## Technical Architecture

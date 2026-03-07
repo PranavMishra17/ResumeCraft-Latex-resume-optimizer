@@ -1,12 +1,12 @@
 \documentclass[10pt, letterpaper]{article}
-%%%%% SOFTWARE DEVELOPER / ML ENGINEER
+
 % Packages:
 \usepackage[
     ignoreheadfoot, % set margins without considering header and footer
-    top=1.1 cm, % seperation between body and page edge from the top
-    bottom=1.1 cm, % seperation between body and page edge from the bottom
-    left=1.1 cm, % seperation between body and page edge from the left
-    right=1.1 cm, % seperation between body and page edge from the right
+    top=1.25 cm, % seperation between body and page edge from the top
+    bottom=1.25 cm, % seperation between body and page edge from the bottom
+    left=1.25 cm, % seperation between body and page edge from the left
+    right=1.25 cm, % seperation between body and page edge from the right
     footskip=1.0 cm, % seperation between body and footer
     % showframe % for debugging 
 ]{geometry} % for adjusting page geometry
@@ -19,8 +19,8 @@
 \usepackage{fontawesome5} % for using icons
 \usepackage{amsmath} % for math
 \usepackage[
-    pdftitle={Pranav Pushkar Mishra's CV},
-    pdfauthor={Pranav Pushkar Mishra},
+    pdftitle={John Doe's CV},
+    pdfauthor={John Doe},
     pdfcreator={LaTeX with RenderCV},
     colorlinks=true,
     urlcolor=primaryColor
@@ -81,6 +81,7 @@
 }{
     \end{itemize}
 } % new environment for highlights
+
 
 \newenvironment{highlightsforbulletentries}{
     \begin{itemize}[
@@ -149,6 +150,7 @@
 
 % new command for external links:
 
+
 \begin{document}
     \newcommand{\AND}{\unskip
         \cleaders\copy\ANDbox\hskip\wd\ANDbox
@@ -158,188 +160,220 @@
     \sbox\ANDbox{$|$}
 
     \begin{header}
-        \fontsize{22 pt}{22 pt}\selectfont Pranav Mishra
+        \fontsize{25 pt}{25 pt}\selectfont Kranti Prakash Yeole
 
         \vspace{1 pt}
 
         \normalsize
+       \kern 5.0 pt%
+     \mbox{\hrefWithoutArrow{mailto:krantiprakashyeole@gmail.com}{krantiprakashyeole@gmail.com}}%
+      \kern 5.0 pt%
+        \AND%
         \kern 5.0 pt%
-        \mbox{\hrefWithoutArrow{tel:773-280-4615}{773-280-4615}}%
-        \kern 5.0 pt%
-         \AND%
-        \kern 5.0 pt%
-        \mbox{\hrefWithoutArrow{mailto:pmishr23@uic.edu}{pmishr23@uic.edu}}%
+        \mbox{\hrefWithoutArrow{tel:+1312-684-93-54}{+1-(312)-684-9354}}%
         \kern 5.0 pt%
         \AND%
         \kern 5.0 pt%
-        \mbox{\hrefWithoutArrow{https://www.linkedin.com/in/pranavgamedev}{LinkedIn/pranavgamedev}}%
-        \kern 5.0 pt%
-        \AND%
-        \kern 5.0 pt%
-        \mbox{\hrefWithoutArrow{https://github.com/PranavMishra17}{Github/PranavMishra17}}%
-        \kern 5.0 pt%
-        \AND%
-        \kern 5.0 pt%
-        \mbox{\hrefWithoutArrow{https://portfolio-pranav-mishra-paranoid.vercel.app/}{Portfolio}}%
+        \mbox{\hrefWithoutArrow{https://www.linkedin.com/in/krantiyeole/}{linkedin/krantiyeole}}%
          \kern 5.0 pt%
-        \AND%
+          \AND%
         \kern 5.0 pt%
-        \mbox{Chicago, IL}%
+        \mbox{\hrefWithoutArrow{https://github.com/krantiyeole20?tab=repositories}{github/krantiyeole20}}%
     \end{header}
 
-    \vspace{4 pt - 0.3 cm}
+    \vspace{5 pt - 0.3 cm}
 
-
-\section{Education}
+    \section{Education}
         \begin{twocolentry}{
-            \textit{\textbf{Aug 2023 - May 2025}}
+            \textit{\textbf{08/2023 – 12/2024}}
         }
-            \textbf{Master of Science, Computer Science [ Graduate Assistant ]}\end{twocolentry}
-            \begin{twocolentry}
-            {GPA: 3.6/4.0}
-    University of Illinois at Chicago, Illinois, USA 
-            \end{twocolentry}
-            \vspace{0.05 cm}
+            \textbf{UNIVERSITY OF ILLINOIS CHICAGO (UIC - BUSINESS) | CHICAGO, IL, USA}\end{twocolentry}
             \begin{onecolentry}
-                \textit{Coursework:} Advanced ML, Applied AI, Advanced NLP, Computer Vision, VR, Game Design, Object-Oriented Programming
-            \end{onecolentry}
+    Master of Science in Business Analytics. GPA of 4.0/4.0. \end{onecolentry}
             
 \vspace{0.15 cm}
                     \begin{twocolentry}{
-            \textit{\textbf{Aug 2019 - June 2023}}
+            \textit{\textbf{07/2014 – 05/2018}}
         }
         
-            \textbf{Bachelor of Science, Computer Science and Engineering}\end{twocolentry}
-            \begin{twocolentry}
-            {GPA: 4.0/4.0}
-Dayananda Sagar College of Engineering, Bangalore, Karnataka, India
-            \end{twocolentry}
-            \vspace{0.05 cm}
-\begin{onecolentry}
-                \textit{Coursework:} AI \& ML, Software Engineering, Computer Networks, Operating Systems, Data Structures \& Algorithms, DBMS
+            \textbf{INDIAN INSTITUTE OF TECHNOLOGY (IIT KANPUR) | KANPUR, UP, INDIA}\end{twocolentry}
+            \begin{onecolentry}
+Bachelor of Technology.
+Won Best Summer Innovation Award for Internship Project
             \end{onecolentry}
 
 
-\section{Technical Experience}
+\section{Projects \& Publications}
 
-\begin{twocolentry}{\textit{\textbf{July 2025 - Jan 2026}}}
-   \textbf{AI/ML Intern} | \href{https://www.wheelprice.com/}{\textit{WheelPrice {\textbf{$\nearrow$}} }} | Charlotte, NC
+
+\begin{twocolentry}{
+           \href{https://github.com/PranavMishra17/Metadata-Enrichment-with-LLMs-for-RAGs-Internal-Knowledge-Retrieval}{\textbf{\textit{GitHub}}}| \href{https://doi.org/10.48550/arXiv.2512.05411}{\textbf{\textit{DOI/arXiv}}}
+       }
+           \textbf{MetaRAG: A SYSTEMATIC FRAMEWORK FOR ENTERPRISE KNOWLEDGE RETRIEVAL}
 \end{twocolentry}
-\vspace{0.10 cm}
 \begin{onecolentry}
     \begin{highlights}
-\item Building end-to-end ML prototype for automotive part fitment prediction using PyTorch and computer vision models
+\item Engineered a production RAG pipeline with LLM-driven metadata enrichment and reranking, exposing retrieval capabilities via a FastAPI REST layer, achieving 82.5\% precision and 0.925 Hit Rate ; paper accepted at IEEE CAI 2026
+\item Automated an LLM-driven evaluation pipeline orchestrating chunking, embedding, and reranking workflows
+    %\item Recognized with Best Poster Award by IDS Department at UIC; presented at INFORMS Conference 2025
     \end{highlights}
-    \begin{highlights}
-\item Deployed production-grade CMS blog system using MERN stack (MongoDB, Express, React, Node.js) with TypeScript, RESTful APIs, and microservices architecture, scaling daily webapp viewership by 10-20k through cloud-native deployment
-    \end{highlights}
+
 \end{onecolentry}
 
-\vspace{0.05 cm} 
-
-\begin{twocolentry}{\textit{\textbf{Feb 2024 - May 2026*}}}
-   \textbf{Research Software Engineer} | \href{https://vare.ahs.uic.edu}{\textit{UIC- VARE Lab {\textbf{$\nearrow$}} }} | Chicago, IL
-\end{twocolentry}
-\vspace{0.10 cm}
-\begin{onecolentry}
-
-    \begin{highlights}
-\item Built virtual patient system using Unreal Engine and C++. Deployed RESTful APIs with Python backend for data analysis \href{https://github.com/PranavMishra17/EQUITY-VirtualPatient-UE5}{\textbf{$\nearrow$}}
-
-\item Deployed end-to-end audio ML pipeline with Flask backend comparing MFCC feature engineering, CNN architectures, and Transformer models achieving 98.52\% accuracy; deployed real-time inference system with VAD \& robustness testing.\href{https://github.com/PranavMishra17/Streaming-Digit-Detector}{\textbf{$\nearrow$}}
-    \end{highlights}
-\end{onecolentry}
-
-
-\section{Research \& Publications}
-
-\begin{twocolentry}{
-           \href{https://github.com/PranavMishra17/Big5-Agents}{\textbf{\textit{GitHub}}} | \href{https://arxiv.org/abs/2508.08115}{\textbf{\textit{Paper}}} | \href{https://github.com/PranavMishra17/SLM-TeamMedAgents}{\textbf{\textit{SLMs-v2.0}}}
-       }
-           \textbf{TeamMedAgents: Medical Decision Making with SLMs through Teamwork}
-\end{twocolentry}
-\vspace{0.05 cm}
-\begin{onecolentry}
-
-\begin{highlights}
-\item Engineered modular multi-agent system using Google ADK with prompt engineering for medical QA across 8 benchmarks
-\item Achieved 77.63\% accuracy on LLMs and 3.1x inference speedup on 4B models through collaborative deliberation, trust-weighted voting, and structured multi-turn reasoning with comprehensive evaluation frameworks
-\end{highlights}
-\end{onecolentry}
-
-\vspace{0.1 cm}
-\begin{twocolentry}{
-           \href{https://github.com/PranavMishra17/Metadata-Enrichment-with-LLMs-for-RAGs-Internal-Knowledge-Retrieval}{\textbf{\textit{GitHub}}}| \href{https://doi.org/10.48550/arXiv.2512.05411}{\textbf{\textit{IEEE Paper}}}
-       }
-           \textbf{MetaRAG: Metadata Enrichment Framework for Enterprise RAG Systems}
-\end{twocolentry}
-\begin{onecolentry}
-   \begin{highlights}
-\item Engineered metadata enrichment pipeline using LLMs with advanced embeddings achieving 82.5\% precision, 0.925 Hit Rate@10, and 25\% hallucination reduction through cross-encoder reranking with comprehensive evaluation framework
-\item Deployed full-stack system on AWS with CI/CD pipelines, vector clustering, evaluation metrics, and performance monitoring
-   \end{highlights}
-\end{onecolentry}
-
-\section{Projects}
-\begin{twocolentry}{
-    \href{https://github.com/PranavMishra17/MockFlow-AI}{\textbf{\textit{GitHub}}} | \href{https://mockflow-ai.onrender.com}{\textbf{\textit{Website}}}
-}
-    \textbf{MockFlow-AI: Real-Time Voice Interview Platform with Multi-Agent Architecture}
-\end{twocolentry}
-\vspace{0.075 cm}
-\begin{onecolentry}
-    \begin{highlights}
-        \item Engineered production full-stack LLM application with sub-400ms latency using React TypeScript frontend, Node.js backend, and multi-agent orchestration with streaming STT-LLM-TTS pipelines for real-time conversational AI.
-        \item Shipped end-to-end features like RAG-based retrieval, feedback loops, performance monitoring, \& cloud-native deployment
-    \end{highlights}
-\end{onecolentry}
-\vspace{0.075 cm}
-\begin{twocolentry}{
-           \href{https://github.com/PranavMishra17/SnakeAI-MLOps}{\textbf{\textit{GitHub}}} | \href{https://pranavmishra17.github.io/SnakeAI-MLOps/}{\textbf{\textit{Demo}}}
-       }
-           \textbf{SnakeAI-MLOps: Multi-Agent Reinforcement Learning Snake Game}
-\end{twocolentry}
-
-\begin{onecolentry}
-   \begin{highlights}
-\item Engineered RL training framework in C++ with LibTorch, PyTorch integration, and CUDA GPU acceleration.
-\item Built production MLOps pipeline with model comparison tools, Docker CI/CD, and real-time gameplay integration
-   \end{highlights}
-\end{onecolentry}
-
-\vspace{0.075 cm}
-\begin{twocolentry}{
-           \href{https://github.com/PranavMishra17/MedRAG-Avatar-Platform-IVORY}{\textbf{\textit{GitHub}}} | \href{https://youtu.be/tZ5aoUfyKgM?si=cNxzee4d4Zi4PU_V}{\textbf{\textit{Demo}}}
-       }
-           \textbf{MedRAG Avatar Platform - Intelligent Healthcare Conversational AI System}
-\end{twocolentry}
-\vspace{0.10 cm}
-\begin{onecolentry}
-   \begin{highlights}
-\item Architected production RAG system with React TypeScript frontend, FastAPI RESTful backend, Azure Cosmos DB, and Pinecone vector search achieving 95\% accuracy for context-aware conversational avatars with source attribution
-   \end{highlights}
-\end{onecolentry}
-
-  \section{ Skills}
-
-\begin{onecolentry}
-\textbf{TECHNICAL SKILLS:} TypeScript, JavaScript, React, Node.js, Next.js, Python, C++, C\#, FastAPI, Django, Express, PostgreSQL, MongoDB, Docker, Git, RESTful APIs, TensorFlow, PyTorch, LangChain, AWS (Lambda, Bedrock, S3), Azure, GCP, DevOps
-\end{onecolentry}
-\vspace{0.1 cm}
-\begin{onecolentry}
-\textbf{APPLICATIONS:} LLM Applications, RAG Systems, Agent Workflows, Full-Stack Development, MLOps, Cloud Computing, DevOps, Agile Development, Performance Monitoring, Model Evaluation, Vector Databases, Embedding Pipelines, API Design
-\end{onecolentry}
-
-  \section{Extracurricular}
-
-\begin{onecolentry}
-   \textbf{Winner of MIT XR Hackathon} | Built Meta Quest 3 app using Unity and Hugging Face for spatial data visualization \href{https://codeberg.org/reality-hack-2024/TABLE_62}{\textbf{$\nearrow$}}
-\end{onecolentry}
 \vspace{0.15 cm}
+
+    \begin{twocolentry}{
+           \href{https://github.com/krantiyeole20/Cloud-Infra-Analytics-Cockpit}{\textbf{\textit{GitHub}}}| \href{https://cloud-infra-analytics-cockpit.vercel.app/}{\textbf{\textit{Dashboard}}}
+       }
+           \textbf{CLOUD INFRA ANALYTICS COCKPIT}
+\end{twocolentry}
 \begin{onecolentry}
-\textbf{INFORMS Analytics+}
-   Presented MetaRAG research to 700+ professionals | First place HINT 5.0 Web3 virtual museum \href{https://github.com/PranavMishra17/Nalleria}{\textbf{$\nearrow$}}
+    \begin{highlights}
+    \item Engineered a full-stack cloud telemetry dashboard using React, FastAPI, DuckDB, \& Redis, cutting peak memory by 78\%
+    \item Built four production ML models with SHAP TreeExplainer attribution surfaced via interactive Plotly waterfall charts, detecting energy waste across 6.75\% of the fleet and behavioral anomalies across 4.89\% of 2M VM telemetry records  
+    %\item Recognized with Best Poster Award by IDS Department at UIC; presented at INFORMS Conference 2025
+    \end{highlights}
+
+    
+   %\begin{highlights}
+    
+                %\item Prototyped a metadata enrichment framework with LLMs and RAG architecture, using AWS S3 documentation
+    %\item Implemented LangChain and Pinecone architecture, achieving near 100\% context retrieval and enhanced search precision
+     
+            %\item Improved retrieval accuracy to 92.11\% (vs. 62.86\% baseline), reducing information time, enabling faster decisions
+             %   \item Recognized with \textit{Best Poster Award} by the IDS Department at UIC; also presented and well received at INFORMS 2025 Conference and currently under review for publication at NeurIPS 2025
+     %\end{highlights}
 \end{onecolentry}
+    
+    \section{Experience}
+
+ \begin{twocolentry}{\textit{\textbf{02/2025 – 12/2025}}}
+    \textbf{HEALTH INNOVATORS} | \textbf{AI Analyst} | \textbf{REMOTE, USA}
+    
+\end{twocolentry}
+
+\vspace{0.10 cm}
+
+\begin{onecolentry}
+    \textit{Digital marketing agency specializing in web design, SEO, and video services for healthcare providers}
+     \begin{highlights}
+                \item Deployed TeRA virtual assistant on Azure (Bot Service, Functions, CosmosDB), leveraging LLM-driven intent routing to automate 70\% of customer queries and reduce resolution time by 50\% from FastAPI backend with multi-turn dialogue
+
+                \item Built a Python multi-agent medical reasoning system using Google ADK and LangChain, orchestrating specialist sub-agents via dynamic query routing, with the orchestration layer deployed on AWS Lambda behind an API Gateway
+
+ \end{highlights}
+
+
+   \end{onecolentry}
+
+\vspace{0.10 cm}
+
+%\begin{onecolentry}
+    %\textit{Collaborated on \textit{Enhancing Enterprise Document Retrieval with LLM-Driven Metadata Enrichment for engineering teams}}
+     %\begin{highlights}
+                %\item Prototyped a metadata enrichment framework with LLMs and RAG architecture, using AWS S3 documentation
+    %\item Implemented LangChain and Pinecone architecture, achieving near 100\% context retrieval and enhanced search precision
+                %\item Improved retrieval accuracy to 92.11\% (vs. 62.86\% baseline), reducing information time, enabling faster decisions
+                %\item Recognized with \textit{Best Poster Award} by the IDS Department at UIC; also presented and well received at INFORMS 2025 Conference and currently under review for publication at NeurIPS 2025
+     %\end{highlights}
+   %\end{onecolentry}
+
+
+\begin{twocolentry}{\textit{\textbf{08/2023 – 05/2024}}}
+    \textbf{UIC - BUSINESS} | \textbf{Graduate Teaching Assistant} | \textbf{CHICAGO, IL, USA}
+    
+\end{twocolentry}
+
+\vspace{0.10 cm}
+
+\begin{onecolentry}
+    \textit{Information and Decision Sciences Courses - Business Database Technology, Information Infrastructure \& Security}
+     \begin{highlights}
+                \item Mentored 200+ students in SQL, schema design, optimization, data modeling \& visualisation for business applications
+                %\item Facilitated coursework \& projects on database technology, info infra, and data governance, for real-world applicability
+     \end{highlights}
+   \end{onecolentry}
+\vspace{0.10 cm}
+ 
+ \begin{twocolentry}{\textit{\textbf{01/2022 – 07/2023}}}
+    \textbf{POCKET FM} | \textbf{Senior Product Analyst} | \textbf{BANGALORE, KA, INDIA}
+    
+\end{twocolentry}
+
+\vspace{0.10 cm}
+
+\begin{onecolentry}
+    \textit{Audio entertainment platform for audio series with 130M+ listeners. Assisted stakeholders in the Product \& Marketing team}
+     \begin{highlights}
+                \item Developed predictive models for customer segmentation, and revenue forecasting, enhancing campaign performance
+     \end{highlights}
+      \begin{highlights}
+                \item Designed A/B testing frameworks with statistical significance testing to optimize targeting and marketing strategies
+     \end{highlights}
+      \begin{highlights}
+                \item Built funnel analysis framework in SQL to optimize marketing campaigns and payment flows, reducing costs by 40\%
+     \end{highlights}
+   \end{onecolentry}
+\vspace{0.10 cm}
+% First Block - SUPR DAILY (SWIGGY)
+\begin{twocolentry}{\textbf{\textit{07/2019 – 12/2021}}}
+    \textbf{SUPR DAILY (SWIGGY)} | \textbf{Data Engineer and Analyst} | \textbf{BANGALORE, KA, INDIA} 
+   
+\end{twocolentry}
+
+\vspace{0.10 cm}
+
+\begin{onecolentry}
+    \textit{Pioneering subscription-based grocery delivery platform in India serving 2M+ daily customers. Member of the founding 4-person analytics engineering team responsible for developing OLAP architecture for Supply Chain \& Warehouse business units}
+
+     \begin{highlights}
+
+
+                \item Engineered data pipelines for demand forecasting and inventory variance analysis, reducing wastage from 7\% to 1\% and saving \$10k daily, surfaced via Power BI dashboards for warehouse procurement and liquidation decisions
+
+                \item Architected and shipped 20+ data modules and recommender systems in Python and SQL, scaling inventory planning and operational promotions, reducing stockout and overstock cycles through automated replenishment logic
+
+                \item Devised entity \& fact tables within relational databases, ensuring data integrity and enabling self-service analytics
+     \end{highlights}
+     
+\end{onecolentry}
+\vspace{0.10 cm}
+% Second Block - MAGIC9 MEDIA AND ANALYTICS
+\begin{twocolentry}{\textbf{\textit{06/2018 – 06/2019}}}
+    \textbf{MAGIC9 MEDIA AND ANALYTICS} | \textbf{Senior Business Analyst} | \textbf{MUMBAI, MH, INDIA} 
+    
+\end{twocolentry}
+
+\vspace{0.10 cm}
+
+\begin{onecolentry}
+    \textit{Measurement Sciences \& Analytics services provider for leading media houses in India. Highest rated analyst among class of 20+}
+     \begin{highlights}
+                \item Appointed lead analyst for the largest client engagement, overseeing TV audience measurement across 1.2B people
+     \end{highlights}
+     
+    % \begin{highlights}
+    
+                \item %Led 15+ end-to-end client projects, including structuring, process management, Looker reports and deriving insights.
+     %\end{highlights}
+     
+     \begin{highlights}
+        \item Conducted regression analysis in Python modeling advertisement length impact on viewership, managing 3 junior analysts, with findings selected as the sole project representing the firm at Audience X Science 2019 by ARF, USA
+   \end{highlights}
+\end{onecolentry}
+
+
+
+
+        \vspace{0.2 cm}
+
+\begin{onecolentry}
+    \textbf{TECHNICAL SKILLS:} R, Docker, Kubernetes, Kafka, Bash, Git, Jira, Perforce, MLflow, Pinecone, GraphQL, Presto
+\end{onecolentry}
+\vspace{0.2 cm}
+\begin{onecolentry}
+    \textbf{APPLICATIONS:} Snowflake, DBT, BigQuery, Tableau, Grafana, Cursor, Claude Code, Agentic Systems, Workflow Automation
+\end{onecolentry}
+    
 
 \end{document}
-
